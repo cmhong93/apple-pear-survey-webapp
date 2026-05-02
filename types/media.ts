@@ -21,7 +21,7 @@ export interface WatermarkPayload {
   sampleId: string
   surveyMonth: string
   photoType: PhotoType
-  address: string
+  locationLabel: string
   appGps?: Coordinate
   myGps660Coordinate?: Coordinate
   surveyorId: string

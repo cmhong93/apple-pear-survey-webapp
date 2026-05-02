@@ -1,6 +1,15 @@
-import { mockSamples } from '@/data/mockSamples'
+import { redirect } from 'next/navigation'
+import { STATUS_LABELS } from '@/data/constants'
+import { getSession } from '@/lib/auth'
+import { readSampleMaster } from '@/lib/googleSheets'
 
-export default function AdminSubmissionsPage() {
+export default async function AdminSubmissionsPage() {
+  const session = await getSession()
+  if (!session) redirect('/login')
+  if (session.role !== 'admin') redirect('/survey')
+
+  const samples = await readSampleMaster()
+
   return (
     <section className="hero-panel">
       <span className="eyebrow">Review</span>
@@ -10,18 +19,28 @@ export default function AdminSubmissionsPage() {
         <thead>
           <tr>
             <th>Sample</th>
+            <th>Crop</th>
+            <th>Area</th>
             <th>Surveyor</th>
             <th>Month</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody>
-          {mockSamples.map((sample) => (
+          {samples.map((sample) => (
             <tr key={sample.id}>
               <td>{sample.id}</td>
+              <td>
+                {sample.crop} · {sample.variety}
+              </td>
+              <td>
+                {sample.city} {sample.town}
+              </td>
               <td>{sample.assignedSurveyorId}</td>
               <td>{sample.surveyMonth}</td>
-              <td>{sample.status}</td>
+              <td>
+                <span className={`status ${sample.status}`}>{STATUS_LABELS[sample.status]}</span>
+              </td>
             </tr>
           ))}
         </tbody>

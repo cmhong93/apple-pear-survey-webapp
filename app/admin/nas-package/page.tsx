@@ -1,4 +1,11 @@
-export default function AdminNasPackagePage() {
+import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth'
+
+export default async function AdminNasPackagePage() {
+  const session = await getSession()
+  if (!session) redirect('/login')
+  if (session.role !== 'admin') redirect('/survey')
+
   return (
     <section className="hero-panel">
       <span className="eyebrow">NAS</span>

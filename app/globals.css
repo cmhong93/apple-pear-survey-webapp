@@ -85,6 +85,11 @@ textarea {
   padding: 8px 12px;
 }
 
+.button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .main {
   margin: 0 auto;
   max-width: 1180px;
@@ -181,6 +186,17 @@ h2 {
 .status.approved {
   background: #e9f7ef;
   color: var(--accent-strong);
+}
+
+.status.in_progress {
+  background: #edf4ff;
+  color: #265d91;
+}
+
+.status.qa_issue,
+.status.rejected {
+  background: #fff0ed;
+  color: var(--danger);
 }
 
 .form-grid {

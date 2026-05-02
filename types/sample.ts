@@ -11,9 +11,11 @@ export interface Coordinate {
 export interface Sample {
   id: string
   crop: CropType
+  variety: string
   farmCode: string
-  farmDisplayName: string
-  address: string
+  province: string
+  city: string
+  town: string
   surveyMonth: string
   assignedSurveyorId: string
   status: SampleStatus

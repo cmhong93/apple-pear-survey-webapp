@@ -6,7 +6,7 @@ export function buildWatermarkLines(payload: WatermarkPayload) {
     `sample: ${payload.sampleId}`,
     `month: ${payload.surveyMonth}`,
     `photo: ${payload.photoType}`,
-    `address: ${payload.address}`,
+    `location: ${payload.locationLabel}`,
     `app gps: ${formatCoordinate(payload.appGps)}`,
     `mygps660: ${formatCoordinate(payload.myGps660Coordinate)}`,
     `surveyor: ${payload.surveyorId}`,

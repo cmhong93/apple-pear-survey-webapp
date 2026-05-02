@@ -1,7 +1,13 @@
+import { redirect } from 'next/navigation'
 import { mockSamples } from '@/data/mockSamples'
+import { getSession } from '@/lib/auth'
 import { formatCoordinate } from '@/lib/geo'
 
-export default function AdminMapPage() {
+export default async function AdminMapPage() {
+  const session = await getSession()
+  if (!session) redirect('/login')
+  if (session.role !== 'admin') redirect('/survey')
+
   return (
     <section className="hero-panel">
       <span className="eyebrow">Kakao map shell</span>
@@ -11,7 +17,9 @@ export default function AdminMapPage() {
         {mockSamples.map((sample) => (
           <div className="card" key={sample.id}>
             <h3>{sample.id}</h3>
-            <p>{sample.address}</p>
+            <p>
+              {sample.city} {sample.town}
+            </p>
             <p className="muted">{formatCoordinate(sample.expectedCoordinate)}</p>
           </div>
         ))}
