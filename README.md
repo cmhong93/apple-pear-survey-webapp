@@ -1,73 +1,50 @@
-# React + TypeScript + Vite
+# Apple Pear Survey Webapp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+MVP foundation for the 2026 Chungnam apple/pear survey DX workflow.
 
-Currently, two official plugins are available:
+## Roles
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- GitHub: source of truth
+- Vercel: webapp, API routes, and deployments
+- Google Sheets: MVP data store
+- Google Drive: evidence file storage
+- Gemini: QA assistant only
+- Kakao: admin map and geocode support
+- NAS: existing upload and client review workflow remains unchanged
 
-## React Compiler
+## Local Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```powershell
+npm.cmd install
+npm.cmd run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Build:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```powershell
+npm.cmd run build
 ```
+
+## Environment
+
+Copy `.env.example` to `.env.local` or pull from Vercel:
+
+```powershell
+vercel.cmd env pull .env.local
+```
+
+Never commit `.env.local`, `.vercel`, `node_modules`, or `dist`.
+
+## MVP Foundation
+
+This PR establishes:
+
+- Next.js App Router shell
+- Surveyor and admin page shells
+- API route skeletons
+- TypeScript domain types
+- Mock sample master and survey templates
+- Agentic QA module skeletons
+- Safe Google Sheets, Drive, Gemini, Kakao, GPS, watermark, NAS stubs
+
+Real external calls are intentionally deferred until the dedicated integration PRs.
