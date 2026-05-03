@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { appendMediaFiles } from '@/lib/googleSheets'
 import { isDriveConfigError, uploadOriginalPhotoBuffer } from '@/lib/googleDrive'
-import { getSession } from '@/lib/auth'
+import { getSession, isTestSampleId, isTestSurveyorId } from '@/lib/auth'
 import { MESSAGES_KO, photoTypeLabelKo } from '@/lib/koreanLabels'
 import { extractMyGps660Coordinate, runGeminiVisionQa } from '@/lib/gemini'
 import { createGeminiQaImage } from '@/lib/imageResize'
@@ -68,6 +68,9 @@ export async function POST(request: Request) {
   const photoType = String(formData.get('photoType') ?? '') as PhotoType
   const manualLat = parseOptionalNumber(formData.get('manual_lat'))
   const manualLng = parseOptionalNumber(formData.get('manual_lng'))
+  if (isTestSurveyorId(session.surveyorId) && sampleId && !isTestSampleId(sampleId)) {
+    return NextResponse.json({ ok: false, message: 'TEST03은 TEST-* 표본에만 사진을 업로드할 수 있습니다.' }, { status: 403 })
+  }
 
   if (!(file instanceof File) || !sampleId || !photoType) {
     return NextResponse.json({ ok: false, message: '사진 파일, 표본 ID, 사진유형이 필요합니다.' }, { status: 400 })

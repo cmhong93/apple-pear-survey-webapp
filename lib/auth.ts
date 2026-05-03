@@ -26,6 +26,18 @@ function isLocalDevelopment() {
   return process.env.NODE_ENV !== 'production'
 }
 
+function isPreviewEnvironment() {
+  return process.env.VERCEL_ENV === 'preview' || isLocalDevelopment()
+}
+
+export function isTestSurveyorId(surveyorId?: string) {
+  return surveyorId?.toUpperCase() === 'TEST03'
+}
+
+export function isTestSampleId(sampleId?: string) {
+  return sampleId?.toUpperCase().startsWith('TEST-') ?? false
+}
+
 function getSurveyorSecret() {
   return process.env.APP_SURVEYOR_SHARED_SECRET || process.env.ADMIN_TOKEN || (isLocalDevelopment() ? 'dev-surveyor-pin' : '')
 }
@@ -66,17 +78,18 @@ function safeEqual(a: string, b: string) {
 export function authenticateMvpLogin(identifier: string, secret: string): LoginResult {
   const normalized = identifier.trim().toUpperCase()
   const surveyor = MVP_SURVEYORS.find((item) => item.id === normalized)
+  const isPreviewTestSurveyor = normalized === 'TEST03' && isPreviewEnvironment()
   const expiresAt = Date.now() + 1000 * 60 * 60 * 12
 
-  if (surveyor && getSurveyorSecret() && safeEqual(secret, getSurveyorSecret())) {
+  if ((surveyor || isPreviewTestSurveyor) && getSurveyorSecret() && safeEqual(secret, getSurveyorSecret())) {
     return {
       ok: true,
       redirectTo: '/survey',
       message: '조사원 로그인이 완료되었습니다.',
       session: {
         role: 'surveyor',
-        userId: surveyor.id,
-        surveyorId: surveyor.id,
+        userId: normalized,
+        surveyorId: normalized,
         expiresAt,
       },
     }

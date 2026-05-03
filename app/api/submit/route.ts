@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { runPreSubmitQa } from '@/agents/qaOrchestrator'
-import { canAccessSample, getSession } from '@/lib/auth'
+import { canAccessSample, getSession, isTestSampleId, isTestSurveyorId } from '@/lib/auth'
 import {
   appendGpsLog,
   appendMediaFiles,
@@ -41,6 +41,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: MESSAGES_KO.sampleIdRequired }, { status: 400 })
   }
 
+  if (isTestSurveyorId(session.surveyorId) && !isTestSampleId(payload.sampleId)) {
+    return NextResponse.json({ ok: false, message: 'TEST03은 TEST-* 표본만 제출할 수 있습니다.' }, { status: 403 })
+  }
+
   const now = new Date().toISOString()
   const submissionId = `sub_${Date.now()}_${randomUUID().slice(0, 8)}`
   const media = (payload.media ?? []).map((item) => ({
@@ -72,6 +76,9 @@ export async function POST(request: Request) {
     }
     if (!canAccessSample(session, sample.assignedSurveyorId)) {
       return NextResponse.json({ ok: false, message: '이 표본에 접근할 권한이 없습니다.' }, { status: 403 })
+    }
+    if (isTestSurveyorId(session.surveyorId) && !isTestSampleId(sample.id)) {
+      return NextResponse.json({ ok: false, message: 'TEST03은 TEST-* 표본만 제출할 수 있습니다.' }, { status: 403 })
     }
 
     const qa = await runPreSubmitQa({ sample, submission })

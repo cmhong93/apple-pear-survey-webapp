@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { getSession, isTestSampleId, isTestSurveyorId } from '@/lib/auth'
 import { isSheetsConfigError, readSampleMaster } from '@/lib/googleSheets'
 
 export async function GET() {
@@ -13,7 +13,12 @@ export async function GET() {
     const assignedSamples =
       session.role === 'admin'
         ? samples
-        : samples.filter((sample) => sample.assignedSurveyorId === session.surveyorId)
+        : samples.filter((sample) => {
+            if (isTestSurveyorId(session.surveyorId)) {
+              return sample.assignedSurveyorId === session.surveyorId && isTestSampleId(sample.id)
+            }
+            return sample.assignedSurveyorId === session.surveyorId
+          })
 
     return NextResponse.json({
       ok: true,

@@ -2,9 +2,9 @@ import { notFound, redirect } from 'next/navigation'
 import { LogoutButton } from '@/app/components/LogoutButton'
 import { getSampleById } from '@/data/mockSamples'
 import { surveyTemplates } from '@/data/surveyTemplates'
-import { statusLabelKo } from '@/lib/koreanLabels'
-import { canAccessSample, getSession } from '@/lib/auth'
+import { canAccessSample, getSession, isTestSampleId, isTestSurveyorId } from '@/lib/auth'
 import { readSampleMaster } from '@/lib/googleSheets'
+import { statusLabelKo } from '@/lib/koreanLabels'
 import { SurveySubmissionForm } from './SurveySubmissionForm'
 
 export default async function SurveyDetailPage({
@@ -26,14 +26,15 @@ export default async function SurveyDetailPage({
 
   if (!sample) notFound()
   if (!canAccessSample(session, sample.assignedSurveyorId)) redirect('/survey')
+  if (isTestSurveyorId(session.surveyorId) && !isTestSampleId(sample.id)) redirect('/survey')
 
   return (
     <section className="hero-panel">
       <span className="eyebrow">{sample.id}</span>
       <h1>태블릿 현장조사</h1>
       <p className="muted">
-        {sample.farmerName ?? '농가명 없음'} / {sample.mobilePhone || sample.phone || '연락처 없음'} /{' '}
-        {sample.city} {sample.town} / {sample.assignedSurveyorId || '미배정'} / {sample.surveyMonth}
+        {sample.farmerName ?? '농가명 없음'} / {sample.mobilePhone || sample.phone || '연락처 없음'} / {sample.city}{' '}
+        {sample.town} / {sample.assignedSurveyorId || '미배정'} / {sample.surveyMonth}
       </p>
       <div className="grid">
         <div className="card">
