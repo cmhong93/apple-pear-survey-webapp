@@ -83,6 +83,14 @@ function value(row: SheetRow, key: string) {
   return (row[key] ?? '').trim()
 }
 
+function firstValue(row: SheetRow, keys: string[]) {
+  for (const key of keys) {
+    const current = value(row, key)
+    if (current) return current
+  }
+  return ''
+}
+
 function parseCoordinate(lat?: string, lng?: string): Coordinate | undefined {
   const latitude = Number(lat)
   const longitude = Number(lng)
@@ -101,20 +109,43 @@ function mapSheetRows(values?: sheets_v4.Schema$ValueRange['values']): SheetRow[
     )
 }
 
+function normalizeCrop(raw: string) {
+  if (raw.includes('배') || raw.toLowerCase() === 'pear') return 'pear'
+  return 'apple'
+}
+
 function rowToSample(row: SheetRow): Sample {
+  const sampleId = firstValue(row, ['sample_id', 'ID'])
+  const rawCrop = firstValue(row, ['crop', '품목'])
+  const fieldAddress = firstValue(row, ['field_address', '필지주소'])
+  const homeAddress = firstValue(row, ['home_address', '자택주소'])
+  const mobilePhone = firstValue(row, ['mobile_phone', '휴대전화'])
+  const phone = firstValue(row, ['phone', '전화번호'])
+
   return {
-    id: value(row, 'sample_id'),
-    crop: value(row, 'crop') === 'pear' ? 'pear' : 'apple',
-    variety: value(row, 'variety') || '-',
-    farmCode: value(row, 'sample_id'),
-    province: value(row, 'province') || 'Chungnam',
-    city: value(row, 'city'),
-    town: value(row, 'town'),
-    fieldAddress: value(row, 'field_address'),
-    surveyMonth: value(row, 'survey_month'),
-    assignedSurveyorId: value(row, 'surveyor_id').toUpperCase(),
+    id: sampleId,
+    crop: normalizeCrop(rawCrop),
+    cropLabel: rawCrop || '사과',
+    variety: firstValue(row, ['variety', '품종']) || '-',
+    farmCode: sampleId,
+    farmerName: firstValue(row, ['farmer_name', '이름']),
+    phone,
+    mobilePhone,
+    province: firstValue(row, ['province', '시도']) || 'Chungnam',
+    city: firstValue(row, ['city', '시군구']),
+    town: firstValue(row, ['town', '읍면동']),
+    homeAddress,
+    fieldAddress,
+    originalFile: firstValue(row, ['original_file', '원본파일']),
+    pnu: firstValue(row, ['pnu', '팜맵 PNU']),
+    notes: firstValue(row, ['notes', '특이사항']),
+    surveyMonth: firstValue(row, ['survey_month', '조사월']) || '202606',
+    assignedSurveyorId: firstValue(row, ['surveyor_id', '조사원']).toUpperCase(),
     status: (value(row, 'status') || 'pending') as SampleStatus,
-    expectedCoordinate: parseCoordinate(value(row, 'field_lat'), value(row, 'field_lng')),
+    expectedCoordinate: parseCoordinate(
+      firstValue(row, ['field_lat', '필지위도']),
+      firstValue(row, ['field_lng', '필지경도']),
+    ),
   }
 }
 
@@ -151,7 +182,7 @@ export async function readSampleMaster(): Promise<Sample[]> {
 
   return mapSheetRows(result.data.values)
     .map(rowToSample)
-    .filter((sample) => sample.id && sample.assignedSurveyorId)
+    .filter((sample) => sample.id)
 }
 
 export async function readSurveySubmissions() {

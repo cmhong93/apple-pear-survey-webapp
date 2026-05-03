@@ -19,8 +19,9 @@ export default async function AdminMapPage() {
           <div className="card" key={sample.id}>
             <h3>{sample.id}</h3>
             <p>
-              {sample.city} {sample.town}
+              {sample.farmerName ?? '-'} / {sample.city} {sample.town}
             </p>
+            <p className="muted">{sample.fieldAddress ?? '-'}</p>
             <p className="muted">{formatCoordinate(sample.expectedCoordinate)}</p>
           </div>
         ))}

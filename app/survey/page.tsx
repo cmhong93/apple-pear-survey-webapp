@@ -22,6 +22,7 @@ export default async function SurveyPage() {
       </section>
     )
   }
+
   const visibleSamples =
     session.role === 'admin'
       ? samples
@@ -42,6 +43,8 @@ export default async function SurveyPage() {
           <tr>
             <th>Sample</th>
             <th>Crop</th>
+            <th>Farmer</th>
+            <th>Contact</th>
             <th>Area</th>
             <th>Surveyor</th>
             <th>Status</th>
@@ -53,12 +56,18 @@ export default async function SurveyPage() {
             <tr key={sample.id}>
               <td>{sample.id}</td>
               <td>
-                {sample.crop} · {sample.variety}
+                {sample.cropLabel} / {sample.variety}
               </td>
+              <td>{sample.farmerName ?? '-'}</td>
+              <td>{sample.mobilePhone || sample.phone || '-'}</td>
               <td>
-                {sample.city} {sample.town}
+                <strong>
+                  {sample.city} {sample.town}
+                </strong>
+                <br />
+                <span className="muted">{sample.fieldAddress ?? '-'}</span>
               </td>
-              <td>{sample.assignedSurveyorId}</td>
+              <td>{sample.assignedSurveyorId || 'Unassigned'}</td>
               <td>
                 <span className={`status ${sample.status}`}>{STATUS_LABELS[sample.status]}</span>
               </td>
@@ -71,7 +80,7 @@ export default async function SurveyPage() {
           ))}
         </tbody>
       </table>
-      {visibleSamples.length === 0 ? <p className="muted">No assigned mock samples.</p> : null}
+      {visibleSamples.length === 0 ? <p className="muted">No assigned samples.</p> : null}
     </section>
   )
 }

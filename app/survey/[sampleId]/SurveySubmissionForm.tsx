@@ -134,7 +134,7 @@ export function SurveySubmissionForm({ sample, fields }: SurveySubmissionFormPro
         </label>
         <label className="field">
           Crop
-          <input name="crop" value={`${sample.crop} / ${sample.variety}`} readOnly />
+          <input name="crop" value={`${sample.cropLabel} / ${sample.variety}`} readOnly />
         </label>
       </div>
 

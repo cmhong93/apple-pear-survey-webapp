@@ -21,6 +21,7 @@ export default async function AdminSubmissionsPage() {
       </section>
     )
   }
+
   const latestSubmissionBySample = new Map(
     submissions.map((submission) => [submission.sample_id || submission.sampleId, submission]),
   )
@@ -29,12 +30,14 @@ export default async function AdminSubmissionsPage() {
     <section className="hero-panel">
       <span className="eyebrow">Review</span>
       <h1>Submissions</h1>
-      <p className="muted">Submission records will come from Google Sheets in a later PR.</p>
+      <p className="muted">Showing sample and submission status from Google Sheets when configured.</p>
       <table className="table">
         <thead>
           <tr>
             <th>Sample</th>
             <th>Crop</th>
+            <th>Farmer</th>
+            <th>Contact</th>
             <th>Area</th>
             <th>Surveyor</th>
             <th>Month</th>
@@ -47,12 +50,16 @@ export default async function AdminSubmissionsPage() {
             <tr key={sample.id}>
               <td>{sample.id}</td>
               <td>
-                {sample.crop} · {sample.variety}
+                {sample.cropLabel} / {sample.variety}
               </td>
+              <td>{sample.farmerName ?? '-'}</td>
+              <td>{sample.mobilePhone || sample.phone || '-'}</td>
               <td>
                 {sample.city} {sample.town}
+                <br />
+                <span className="muted">{sample.fieldAddress ?? '-'}</span>
               </td>
-              <td>{sample.assignedSurveyorId}</td>
+              <td>{sample.assignedSurveyorId || 'Unassigned'}</td>
               <td>{sample.surveyMonth}</td>
               <td>
                 <span className={`status ${sample.status}`}>{STATUS_LABELS[sample.status]}</span>
