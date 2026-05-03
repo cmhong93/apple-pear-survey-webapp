@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 import { runRuleValidationAgent } from '@/agents/ruleValidationAgent'
 import { REQUIRED_PHOTO_TYPES } from '@/data/constants'
 import { photoTypeLabelKo } from '@/lib/koreanLabels'
@@ -13,6 +13,17 @@ interface SurveySubmissionFormProps {
   sample: Sample
   templates: SurveyTemplate[]
 }
+
+const quickNoteTemplates = [
+  { label: '특이사항 없음', text: '특이사항 없음' },
+  { label: '수형 혼재', text: '수형 혼재: [주 수형] [ ]%, [보조 수형] [ ]%. 조사목은 [ ] 수형 구역에 위치' },
+  { label: '재식주수 실측', text: '농가가 재식주수를 정확히 알지 못해 현장 실측 기준으로 입력' },
+  { label: '병해충 많음', text: '[병해충명] 발생이 전년 대비 많음. 피해 정도: [ ]. 주요 원인: [ ]' },
+  { label: '생리장해 발생', text: '[일소/열과/낙과/과피얼룩] 발생. 발생 위치/면적: [ ]. 전년 대비: [ ]' },
+  { label: '일부 수확', text: '조사 전 일부 수확 확인. 그루당 수확량: [ ]개. 착과수 조사에 반영' },
+  { label: '측정 불가', text: '[반복 개체/원가지] 측정 불가. 사유: [ ]. 대체 여부: [ ]' },
+  { label: '생산량 차이', text: '예상 생산량이 전년/평년 대비 [증가/감소]. 사유: [ ]' },
+]
 
 function shouldShowField(field: SurveyField, sample: Sample, template: SurveyTemplate, values: Record<string, string>) {
   if (!field.condition) return true
@@ -61,6 +72,18 @@ function parseCoordinateValue(value: FormDataEntryValue | null) {
   return Number.isFinite(numeric) ? numeric : undefined
 }
 
+function isNoteField(field: SurveyField) {
+  return (
+    field.type === 'textarea' &&
+    (field.id.includes('note') ||
+      field.id.includes('reason') ||
+      field.id.includes('other') ||
+      field.label.includes('특이사항') ||
+      field.label.includes('사유') ||
+      field.label.includes('기타'))
+  )
+}
+
 export function SurveySubmissionForm({ sample, templates }: SurveySubmissionFormProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState(templates[0]?.id ?? '')
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
@@ -80,6 +103,14 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
     [fieldValues, sample, selectedTemplate],
   )
   const fieldsBySection = groupBySection(visibleFields)
+
+  function fieldValue(field: SurveyField) {
+    return fieldValues[field.id] ?? initialValue(sample, field.id)
+  }
+
+  function setFieldValue(fieldId: string, value: string) {
+    setFieldValues((current) => ({ ...current, [fieldId]: value }))
+  }
 
   function captureGps() {
     if (!navigator.geolocation) {
@@ -145,16 +176,32 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
   }
 
   function renderField(field: SurveyField) {
+    const value = fieldValue(field)
     const shared = {
       name: field.id,
       required: field.required,
       placeholder: field.placeholder,
-      defaultValue: initialValue(sample, field.id),
-      onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-        setFieldValues((current) => ({ ...current, [field.id]: event.target.value })),
+      value,
+      onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+        setFieldValue(field.id, event.target.value),
     }
 
-    if (field.type === 'textarea') return <textarea {...shared} />
+    if (field.type === 'textarea') {
+      return (
+        <>
+          <textarea {...shared} />
+          {isNoteField(field) ? (
+            <div className="nav">
+              {quickNoteTemplates.map((template) => (
+                <button className="button" key={template.label} type="button" onClick={() => setFieldValue(field.id, template.text)}>
+                  {template.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </>
+      )
+    }
 
     if (field.type === 'select') {
       return (
@@ -196,15 +243,15 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
   }
 
   function buildSubmission(formData: FormData, status: 'draft' | 'submitted') {
-    const myGps660Lat = parseCoordinateValue(formData.get('mygps660_lat'))
-    const myGps660Lng = parseCoordinateValue(formData.get('mygps660_lng'))
+    const myGps660LatValue = parseCoordinateValue(formData.get('mygps660_lat'))
+    const myGps660LngValue = parseCoordinateValue(formData.get('mygps660_lng'))
     const myGps660Coordinate =
-      myGps660Lat !== undefined && myGps660Lng !== undefined
-        ? { latitude: myGps660Lat, longitude: myGps660Lng }
+      myGps660LatValue !== undefined && myGps660LngValue !== undefined
+        ? { latitude: myGps660LatValue, longitude: myGps660LngValue }
         : undefined
     const now = new Date().toISOString()
     const answers = visibleFields.map((field) => {
-      const values = formData.getAll(field.id).map((value) => String(value).trim())
+      const values = formData.getAll(field.id).map((item) => String(item).trim())
       return {
         fieldId: field.id,
         fieldLabel: field.label,
@@ -233,7 +280,7 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
     }
   }
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSubmitting(true)
     setMessage('')
@@ -359,9 +406,10 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
                   {field.required ? ' *' : ''}
                 </span>
                 {field.help ? <span className="muted">{field.help}</span> : null}
-                {field.id === 'field_trade_status' ? (
+                {field.id.includes('training_system') ? (
                   <span className="muted">
-                    포전거래는 수확 전에 과원 또는 필지를 통째로 상인에게 넘기는 거래입니다. 농가가 직접 수확·출하하면 X를 선택하세요.
+                    재배 수형 판단이 어려운 경우 농가에 먼저 확인하세요. 그래도 판단이 어려우면 확인불가를 선택하고,
+                    정면·측면 등 여러 각도에서 사진을 촬영한 뒤 사유를 입력하세요.
                   </span>
                 ) : null}
                 {renderField(field)}
@@ -383,7 +431,7 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
             ? `${appGps.latitude.toFixed(6)}, ${appGps.longitude.toFixed(6)} ±${Math.round(
                 appGps.accuracyMeters ?? 0,
               )}m`
-            : gpsMessage || '아직 GPS를 수집하지 않았습니다.'}
+            : gpsMessage || '위치 권한을 허용해 주세요.'}
         </p>
         <div className="grid">
           <label className="field">

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { runPreSubmitQa } from '@/agents/qaOrchestrator'
-import { MESSAGES_KO } from '@/lib/koreanLabels'
+import { canAccessSample, getSession } from '@/lib/auth'
 import {
   appendGpsLog,
   appendMediaFiles,
@@ -11,10 +11,10 @@ import {
   isSheetsConfigError,
   readSampleMaster,
 } from '@/lib/googleSheets'
-import { canAccessSample, getSession } from '@/lib/auth'
+import { MESSAGES_KO } from '@/lib/koreanLabels'
+import type { MediaArtifact } from '@/types/media'
 import type { Coordinate } from '@/types/sample'
 import type { SurveyAnswer, SurveySubmission } from '@/types/submission'
-import type { MediaArtifact } from '@/types/media'
 
 interface SubmitPayload {
   sampleId: string
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     media,
     appGps: payload.appGps,
     myGps660Coordinate: payload.myGps660Coordinate,
-    submittedAt: now,
+    submittedAt: requestedStatus === 'submitted' ? now : undefined,
     createdAt: now,
     updatedAt: now,
   }
