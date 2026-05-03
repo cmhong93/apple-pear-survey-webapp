@@ -27,11 +27,11 @@ function isLocalDevelopment() {
 }
 
 function getSurveyorSecret() {
-  return process.env.APP_SURVEYOR_SHARED_SECRET || (isLocalDevelopment() ? 'dev-surveyor-pin' : '')
+  return process.env.APP_SURVEYOR_SHARED_SECRET || process.env.ADMIN_TOKEN || (isLocalDevelopment() ? 'dev-surveyor-pin' : '')
 }
 
 function getAdminPassword() {
-  return process.env.APP_ADMIN_PASSWORD || (isLocalDevelopment() ? 'dev-admin-password' : '')
+  return process.env.APP_ADMIN_PASSWORD || process.env.ADMIN_TOKEN || (isLocalDevelopment() ? 'dev-admin-password' : '')
 }
 
 function getSessionSecret() {
@@ -39,6 +39,7 @@ function getSessionSecret() {
     process.env.APP_SESSION_SECRET ||
     process.env.APP_ADMIN_PASSWORD ||
     process.env.APP_SURVEYOR_SHARED_SECRET ||
+    process.env.ADMIN_TOKEN ||
     (isLocalDevelopment() ? 'dev-session-secret' : '')
   )
 }

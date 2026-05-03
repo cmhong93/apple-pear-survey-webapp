@@ -33,7 +33,15 @@ function getSpreadsheetId() {
 
 function getServiceAccountJson() {
   const encoded = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64
-  if (!encoded) return null
+  if (!encoded) {
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+      return {
+        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }
+    }
+    return null
+  }
 
   try {
     return JSON.parse(Buffer.from(encoded, 'base64').toString('utf8')) as {
@@ -46,7 +54,11 @@ function getServiceAccountJson() {
 }
 
 export function isGoogleSheetsConfigured() {
-  return Boolean(getSpreadsheetId() && process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64)
+  return Boolean(
+    getSpreadsheetId() &&
+      (process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ||
+        (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY)),
+  )
 }
 
 function requireSheetsConfiguration() {
@@ -56,7 +68,7 @@ function requireSheetsConfiguration() {
   if (!spreadsheetId || !credentials) {
     if (isLocalDevelopment()) return null
     throw new GoogleSheetsConfigurationError(
-      'Google Sheets is not configured. Set GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_JSON_BASE64.',
+      'Google Sheets is not configured. Set GOOGLE_SHEET_ID plus GOOGLE_SERVICE_ACCOUNT_JSON_BASE64, or GOOGLE_SERVICE_ACCOUNT_EMAIL plus GOOGLE_PRIVATE_KEY.',
     )
   }
 

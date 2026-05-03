@@ -20,7 +20,15 @@ function getDriveFolderId() {
 
 function getServiceAccountJson() {
   const encoded = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64
-  if (!encoded) return null
+  if (!encoded) {
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+      return {
+        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }
+    }
+    return null
+  }
 
   try {
     return JSON.parse(Buffer.from(encoded, 'base64').toString('utf8')) as {
@@ -33,7 +41,11 @@ function getServiceAccountJson() {
 }
 
 export function isGoogleDriveConfigured() {
-  return Boolean(getDriveFolderId() && process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64)
+  return Boolean(
+    getDriveFolderId() &&
+      (process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ||
+        (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY)),
+  )
 }
 
 async function getDriveClient() {
@@ -43,7 +55,7 @@ async function getDriveClient() {
   if (!folderId || !credentials) {
     if (isLocalDevelopment()) return null
     throw new GoogleDriveConfigurationError(
-      'Google Drive is not configured. Set GOOGLE_DRIVE_ROOT_FOLDER_ID and GOOGLE_SERVICE_ACCOUNT_JSON_BASE64.',
+      'Google Drive is not configured. Set GOOGLE_DRIVE_ROOT_FOLDER_ID plus GOOGLE_SERVICE_ACCOUNT_JSON_BASE64, or GOOGLE_SERVICE_ACCOUNT_EMAIL plus GOOGLE_PRIVATE_KEY.',
     )
   }
 
