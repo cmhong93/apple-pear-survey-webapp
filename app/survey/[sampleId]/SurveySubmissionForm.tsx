@@ -52,6 +52,11 @@ function groupBySection(fields: SurveyField[]) {
   }, {})
 }
 
+function isMonthDay(value: string) {
+  if (!value) return true
+  return /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(value)
+}
+
 export function SurveySubmissionForm({ sample, templates }: SurveySubmissionFormProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState(templates[0]?.id ?? '')
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
@@ -158,7 +163,9 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
     return (
       <input
         {...shared}
-        type={field.type === 'boolean' ? 'text' : field.type}
+        type={field.type === 'date' || field.type === 'boolean' ? 'text' : field.type}
+        pattern={field.type === 'date' ? '^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$' : undefined}
+        maxLength={field.type === 'date' ? 5 : undefined}
         inputMode={field.inputMode}
         min={field.min}
         max={field.max}
@@ -187,6 +194,16 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
         value: field.type === 'checkbox' ? values : String(formData.get(field.id) ?? ''),
       }
     })
+    const invalidDateField = visibleFields.find((field) => {
+      if (field.type !== 'date') return false
+      return !isMonthDay(String(formData.get(field.id) ?? ''))
+    })
+
+    if (invalidDateField) {
+      setIsSubmitting(false)
+      setMessage(`${invalidDateField.label}은(는) MM-DD 형식으로 입력하세요. 예: 06-15`)
+      return
+    }
 
     const response = await fetch('/api/submit', {
       method: 'POST',

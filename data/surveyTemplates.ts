@@ -51,7 +51,16 @@ function number(id: string, label: string, section: string, extra: Partial<Surve
 }
 
 function date(id: string, label: string, section: string, extra: Partial<SurveyField> = {}): SurveyField {
-  return { id, label, section, type: 'date', ...extra }
+  return {
+    id,
+    label,
+    section,
+    type: 'date',
+    placeholder: 'MM-DD',
+    help: '월-일 형식으로 입력하세요. 예: 06-15',
+    inputMode: 'numeric',
+    ...extra,
+  }
 }
 
 function textarea(id: string, label: string, section: string, extra: Partial<SurveyField> = {}): SurveyField {
