@@ -16,6 +16,7 @@ export interface Sample {
   province: string
   city: string
   town: string
+  fieldAddress?: string
   surveyMonth: string
   assignedSurveyorId: string
   status: SampleStatus

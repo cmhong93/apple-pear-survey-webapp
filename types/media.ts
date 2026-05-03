@@ -1,6 +1,6 @@
 import type { Coordinate } from './sample'
 
-export type PhotoType = 'plot' | 'tree1' | 'tree2' | 'tree3' | 'mygps660_screen'
+export type PhotoType = 'plot_photo' | 'tree1_photo' | 'tree2_photo' | 'tree3_photo' | 'mygps660_screen'
 
 export interface MediaArtifact {
   id: string

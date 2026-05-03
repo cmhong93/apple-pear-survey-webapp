@@ -10,6 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "googleapis": "^171.4.0",
     "next": "latest",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"

@@ -4,16 +4,31 @@ import { LogoutButton } from '@/app/components/LogoutButton'
 import { STATUS_LABELS } from '@/data/constants'
 import { MVP_SURVEYORS } from '@/data/constants'
 import { getSession } from '@/lib/auth'
-import { readSampleMaster } from '@/lib/googleSheets'
+import { readSampleMaster, readSurveySubmissions } from '@/lib/googleSheets'
 
 export default async function AdminPage() {
   const session = await getSession()
   if (!session) redirect('/login')
   if (session.role !== 'admin') redirect('/survey')
 
-  const samples = await readSampleMaster()
+  let samples
+  let submissions
+  try {
+    ;[samples, submissions] = await Promise.all([readSampleMaster(), readSurveySubmissions()])
+  } catch (error) {
+    return (
+      <section className="hero-panel">
+        <span className="eyebrow">Configuration required</span>
+        <h1>Google Sheets is not ready</h1>
+        <p className="muted">{error instanceof Error ? error.message : 'Failed to read admin data.'}</p>
+        <LogoutButton />
+      </section>
+    )
+  }
+  const submittedSampleIds = new Set(submissions.map((row) => row.sample_id || row.sampleId))
   const counts = samples.reduce<Record<string, number>>((acc, sample) => {
-    acc[sample.status] = (acc[sample.status] ?? 0) + 1
+    const status = submittedSampleIds.has(sample.id) ? 'submitted' : sample.status
+    acc[status] = (acc[status] ?? 0) + 1
     return acc
   }, {})
   const countBySurveyor = MVP_SURVEYORS.map((surveyor) => ({
@@ -30,6 +45,10 @@ export default async function AdminPage() {
         <div className="card">
           <h3>Total</h3>
           <p>{samples.length} samples</p>
+        </div>
+        <div className="card">
+          <h3>Submissions</h3>
+          <p>{submissions.length} saved rows</p>
         </div>
         {Object.entries(STATUS_LABELS).map(([status, label]) => (
           <div className="card" key={status}>

@@ -1,14 +1,29 @@
 import { redirect } from 'next/navigation'
 import { STATUS_LABELS } from '@/data/constants'
 import { getSession } from '@/lib/auth'
-import { readSampleMaster } from '@/lib/googleSheets'
+import { readSampleMaster, readSurveySubmissions } from '@/lib/googleSheets'
 
 export default async function AdminSubmissionsPage() {
   const session = await getSession()
   if (!session) redirect('/login')
   if (session.role !== 'admin') redirect('/survey')
 
-  const samples = await readSampleMaster()
+  let samples
+  let submissions
+  try {
+    ;[samples, submissions] = await Promise.all([readSampleMaster(), readSurveySubmissions()])
+  } catch (error) {
+    return (
+      <section className="hero-panel">
+        <span className="eyebrow">Configuration required</span>
+        <h1>Google Sheets is not ready</h1>
+        <p className="muted">{error instanceof Error ? error.message : 'Failed to read submissions.'}</p>
+      </section>
+    )
+  }
+  const latestSubmissionBySample = new Map(
+    submissions.map((submission) => [submission.sample_id || submission.sampleId, submission]),
+  )
 
   return (
     <section className="hero-panel">
@@ -24,6 +39,7 @@ export default async function AdminSubmissionsPage() {
             <th>Surveyor</th>
             <th>Month</th>
             <th>Status</th>
+            <th>Submission</th>
           </tr>
         </thead>
         <tbody>
@@ -41,6 +57,7 @@ export default async function AdminSubmissionsPage() {
               <td>
                 <span className={`status ${sample.status}`}>{STATUS_LABELS[sample.status]}</span>
               </td>
+              <td>{latestSubmissionBySample.get(sample.id)?.submission_id ?? '-'}</td>
             </tr>
           ))}
         </tbody>

@@ -22,4 +22,10 @@ export const STATUS_LABELS: Record<SampleStatus, string> = {
   rejected: 'Rejected',
 }
 
-export const REQUIRED_PHOTO_TYPES = ['plot', 'tree1', 'tree2', 'tree3', 'mygps660_screen'] as const
+export const REQUIRED_PHOTO_TYPES = [
+  'plot_photo',
+  'tree1_photo',
+  'tree2_photo',
+  'tree3_photo',
+  'mygps660_screen',
+] as const

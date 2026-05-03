@@ -9,7 +9,19 @@ export default async function SurveyPage() {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const samples = await readSampleMaster()
+  let samples
+  try {
+    samples = await readSampleMaster()
+  } catch (error) {
+    return (
+      <section className="hero-panel">
+        <span className="eyebrow">Configuration required</span>
+        <h1>Google Sheets is not ready</h1>
+        <p className="muted">{error instanceof Error ? error.message : 'Failed to read sample_master.'}</p>
+        <LogoutButton />
+      </section>
+    )
+  }
   const visibleSamples =
     session.role === 'admin'
       ? samples

@@ -2,10 +2,15 @@ import type { SurveyTemplate } from '@/types/survey'
 
 const commonFields = [
   {
-    id: 'survey_date',
-    label: 'Survey date',
-    type: 'date',
+    id: 'survey_type',
+    label: 'Survey type',
+    type: 'select',
     required: true,
+    options: [
+      { label: 'Interview survey', value: 'interview' },
+      { label: 'Growth survey', value: 'growth' },
+      { label: 'Production survey', value: 'production' },
+    ],
   },
   {
     id: 'growth_condition',
@@ -19,30 +24,24 @@ const commonFields = [
     ],
   },
   {
-    id: 'tree_count',
-    label: 'Observed tree count',
-    type: 'number',
-    required: true,
-    unit: 'trees',
-  },
-  {
-    id: 'disease_observed',
-    label: 'Disease observed',
-    type: 'boolean',
-    required: true,
-  },
-  {
-    id: 'disease_notes',
-    label: 'Disease notes',
+    id: 'pest_disease_status',
+    label: 'Pest and disease status',
     type: 'textarea',
-    condition: {
-      fieldId: 'disease_observed',
-      equals: true,
-    },
+    required: true,
   },
   {
-    id: 'field_notes',
-    label: 'Field notes',
+    id: 'fruit_count_note',
+    label: 'Fruit count note',
+    type: 'textarea',
+  },
+  {
+    id: 'expected_yield_note',
+    label: 'Expected yield note',
+    type: 'textarea',
+  },
+  {
+    id: 'special_note',
+    label: 'Special note',
     type: 'textarea',
     placeholder: 'Record tablet survey notes from the field.',
   },
