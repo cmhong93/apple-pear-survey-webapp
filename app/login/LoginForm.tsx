@@ -27,7 +27,7 @@ export function LoginForm() {
 
     setIsLoading(false)
     if (!response.ok || !result.ok) {
-      setMessage(result.message || 'Login failed.')
+      setMessage(result.message || '로그인에 실패했습니다.')
       return
     }
 
@@ -37,28 +37,28 @@ export function LoginForm() {
   return (
     <form className="form-grid" onSubmit={submitLogin}>
       <label className="field">
-        ID
+        조사원 ID
         <input
           name="identifier"
           value={identifier}
           onChange={(event) => setIdentifier(event.target.value)}
-          placeholder="S01 or admin"
+          placeholder="S01 또는 admin"
           autoComplete="username"
         />
       </label>
       <label className="field">
-        Secret
+        비밀번호
         <input
           name="secret"
           value={secret}
           onChange={(event) => setSecret(event.target.value)}
           type="password"
-          placeholder="Enter shared secret"
+          placeholder="비밀번호 입력"
           autoComplete="current-password"
         />
       </label>
       <button className="button" type="submit" disabled={isLoading}>
-        {isLoading ? 'Checking...' : 'Continue'}
+        {isLoading ? '확인 중...' : '로그인'}
       </button>
       {message ? <p className="muted">{message}</p> : null}
     </form>

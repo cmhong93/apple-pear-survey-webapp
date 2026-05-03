@@ -15,12 +15,12 @@ export async function POST(request: Request) {
   const geoFindings = sample ? runGeoEvidenceAgent(sample, submission) : []
   const visionFindings = await runVisionQaAgent(submission.media)
   const findings = runEvidenceMatchingAgent([ruleFindings, geoFindings, visionFindings])
-  const issues = runIssueGenerationAgent(submission.sampleId ?? 'unknown-sample', findings)
+  const issues = runIssueGenerationAgent(submission.sampleId ?? '표본미상', findings)
 
   return NextResponse.json({
     submissionId: submission.id,
     findings,
     issues,
-    assistantSummary: `${findings.length} MVP QA findings generated.`,
+    assistantSummary: `검수 결과 ${findings.length}건이 생성되었습니다.`,
   })
 }

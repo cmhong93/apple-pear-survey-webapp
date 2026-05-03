@@ -110,8 +110,7 @@ textarea {
   color: var(--accent);
   font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 h1,
@@ -194,6 +193,8 @@ h2 {
 }
 
 .status.qa_issue,
+.status.qa_required,
+.status.draft,
 .status.rejected {
   background: #fff0ed;
   color: var(--danger);
@@ -216,6 +217,26 @@ h2 {
   border-radius: 8px;
   min-height: 42px;
   padding: 10px 12px;
+}
+
+.checkbox-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.checkbox-item {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.checkbox-item input {
+  min-height: auto;
 }
 
 @media (max-width: 720px) {

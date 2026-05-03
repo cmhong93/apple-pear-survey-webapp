@@ -1,11 +1,12 @@
 import type { MediaArtifact } from './media'
 import type { Coordinate } from './sample'
 
-export type SubmissionStatus = 'draft' | 'submitted' | 'needs_repair' | 'approved' | 'rejected'
+export type SubmissionStatus = 'draft' | 'submitted' | 'qa_required' | 'approved' | 'rejected'
 
 export interface SurveyAnswer {
   fieldId: string
-  value: string | number | boolean | null
+  fieldLabel: string
+  value: string | number | boolean | string[] | null
 }
 
 export interface SurveySubmission {
@@ -13,6 +14,7 @@ export interface SurveySubmission {
   sampleId: string
   surveyorId: string
   templateId: string
+  surveyType?: string
   status: SubmissionStatus
   answers: SurveyAnswer[]
   media: MediaArtifact[]

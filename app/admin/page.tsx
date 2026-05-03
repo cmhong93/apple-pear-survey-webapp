@@ -18,9 +18,9 @@ export default async function AdminPage() {
   } catch (error) {
     return (
       <section className="hero-panel">
-        <span className="eyebrow">Configuration required</span>
-        <h1>Google Sheets is not ready</h1>
-        <p className="muted">{error instanceof Error ? error.message : 'Failed to read admin data.'}</p>
+        <span className="eyebrow">설정 필요</span>
+        <h1>구글 시트 연결이 준비되지 않았습니다</h1>
+        <p className="muted">{error instanceof Error ? error.message : '관리자 데이터를 읽지 못했습니다.'}</p>
         <LogoutButton />
       </section>
     )
@@ -35,48 +35,50 @@ export default async function AdminPage() {
     ...surveyor,
     count: samples.filter((sample) => sample.assignedSurveyorId === surveyor.id).length,
   }))
+  const dashboardStatuses = ['pending', 'submitted', 'qa_required', 'approved', 'rejected'] as const
 
   return (
     <section className="hero-panel">
-      <span className="eyebrow">Admin</span>
-      <h1>Survey operations dashboard</h1>
-      <p className="muted">Signed in as admin. All status values are mock data until Sheets integration lands.</p>
+      <span className="eyebrow">관리자</span>
+      <h1>관리자 대시보드</h1>
+      <p className="muted">전체 표본과 제출 현황을 확인합니다.</p>
       <div className="grid">
         <div className="card">
-          <h3>Total</h3>
-          <p>{samples.length} samples</p>
+          <h3>전체 표본 수</h3>
+          <p>{samples.length}건</p>
         </div>
         <div className="card">
-          <h3>Submissions</h3>
-          <p>{submissions.length} saved rows</p>
+          <h3>제출완료</h3>
+          <p>{submissions.length}건</p>
         </div>
-        {Object.entries(STATUS_LABELS).map(([status, label]) => (
+        {dashboardStatuses.map((status) => (
           <div className="card" key={status}>
-            <h3>{label}</h3>
-            <p>{counts[status] ?? 0} samples</p>
+            <h3>{STATUS_LABELS[status]}</h3>
+            <p>{counts[status] ?? 0}건</p>
           </div>
         ))}
       </div>
+      <h2>조사원별 진행률</h2>
       <div className="grid">
         {countBySurveyor.map((item) => (
           <div className="card" key={item.id}>
             <h3>{item.id}</h3>
-            <p>{item.count} assigned samples</p>
+            <p>{item.count}건 배정</p>
           </div>
         ))}
       </div>
       <div className="nav">
         <Link className="button" href="/admin/submissions">
-          Submissions
+          제출 목록
         </Link>
         <Link className="button" href="/admin/issues">
-          Issues
+          보완필요
         </Link>
         <Link className="button" href="/admin/map">
-          Map
+          지도
         </Link>
         <Link className="button" href="/admin/nas-package">
-          NAS package
+          NAS 패키지
         </Link>
         <LogoutButton />
       </div>

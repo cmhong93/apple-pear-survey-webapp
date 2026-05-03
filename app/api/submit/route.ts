@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { runIssueGenerationAgent } from '@/agents/issueGenerationAgent'
 import { runRuleValidationAgent } from '@/agents/ruleValidationAgent'
+import { MESSAGES_KO } from '@/lib/koreanLabels'
 import {
   appendGpsLog,
   appendMediaFiles,
@@ -20,6 +21,8 @@ interface SubmitPayload {
   crop: string
   variety: string
   surveyMonth: string
+  templateId?: string
+  surveyType?: string
   answers: SurveyAnswer[]
   appGps?: Coordinate
   myGps660Coordinate?: Coordinate
@@ -29,12 +32,12 @@ interface SubmitPayload {
 export async function POST(request: Request) {
   const session = await getSession()
   if (!session || session.role !== 'surveyor' || !session.surveyorId) {
-    return NextResponse.json({ ok: false, message: 'Surveyor session required.' }, { status: 401 })
+    return NextResponse.json({ ok: false, message: MESSAGES_KO.surveyorSessionRequired }, { status: 401 })
   }
 
   const payload = (await request.json()) as SubmitPayload
   if (!payload.sampleId) {
-    return NextResponse.json({ ok: false, message: 'sampleId is required.' }, { status: 400 })
+    return NextResponse.json({ ok: false, message: MESSAGES_KO.sampleIdRequired }, { status: 400 })
   }
 
   const now = new Date().toISOString()
@@ -48,7 +51,8 @@ export async function POST(request: Request) {
     id: submissionId,
     sampleId: payload.sampleId,
     surveyorId: session.surveyorId,
-    templateId: `${payload.crop || 'field'}-2026-v1`,
+    templateId: payload.templateId || `${payload.crop || 'field'}-2026-v1`,
+    surveyType: payload.surveyType,
     status: 'submitted',
     answers: payload.answers,
     media,
@@ -76,10 +80,10 @@ export async function POST(request: Request) {
       ok: true,
       submissionId,
       qaIssueCount: issues.length,
-      message: 'Submission saved.',
+      message: MESSAGES_KO.submitSaved,
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to save submission.'
+    const message = error instanceof Error ? error.message : MESSAGES_KO.submitFailed
     return NextResponse.json(
       {
         ok: false,

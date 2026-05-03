@@ -11,9 +11,9 @@ export default async function AdminMapPage() {
 
   return (
     <section className="hero-panel">
-      <span className="eyebrow">Kakao map shell</span>
-      <h1>Sample map</h1>
-      <p className="muted">Kakao JS map integration will be added after server REST stubs are validated.</p>
+      <span className="eyebrow">지도</span>
+      <h1>표본 위치 지도</h1>
+      <p className="muted">필지 위치와 GPS 증빙을 확인합니다.</p>
       <div className="grid">
         {samples.map((sample) => (
           <div className="card" key={sample.id}>

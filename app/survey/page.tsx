@@ -15,9 +15,9 @@ export default async function SurveyPage() {
   } catch (error) {
     return (
       <section className="hero-panel">
-        <span className="eyebrow">Configuration required</span>
-        <h1>Google Sheets is not ready</h1>
-        <p className="muted">{error instanceof Error ? error.message : 'Failed to read sample_master.'}</p>
+        <span className="eyebrow">설정 필요</span>
+        <h1>구글 시트 연결이 준비되지 않았습니다</h1>
+        <p className="muted">{error instanceof Error ? error.message : '표본 원장을 읽지 못했습니다.'}</p>
         <LogoutButton />
       </section>
     )
@@ -30,10 +30,10 @@ export default async function SurveyPage() {
 
   return (
     <section className="hero-panel">
-      <span className="eyebrow">Surveyor tablet</span>
-      <h1>Assigned samples</h1>
+      <span className="eyebrow">조사원 태블릿</span>
+      <h1>배정 표본 목록</h1>
       <p className="muted">
-        Signed in as {session.userId}. {session.role === 'admin' ? 'Showing all samples.' : 'Showing assigned samples only.'}
+        로그인 ID: {session.userId}. {session.role === 'admin' ? '전체 표본을 표시합니다.' : '배정된 표본만 표시합니다.'}
       </p>
       <div className="nav">
         <LogoutButton />
@@ -41,14 +41,14 @@ export default async function SurveyPage() {
       <table className="table">
         <thead>
           <tr>
-            <th>Sample</th>
-            <th>Crop</th>
-            <th>Farmer</th>
-            <th>Contact</th>
-            <th>Area</th>
-            <th>Surveyor</th>
-            <th>Status</th>
-            <th>Open</th>
+            <th>표본</th>
+            <th>품목/품종</th>
+            <th>농가명</th>
+            <th>연락처</th>
+            <th>필지주소</th>
+            <th>조사원</th>
+            <th>조사상태</th>
+            <th>조사 시작</th>
           </tr>
         </thead>
         <tbody>
@@ -67,20 +67,20 @@ export default async function SurveyPage() {
                 <br />
                 <span className="muted">{sample.fieldAddress ?? '-'}</span>
               </td>
-              <td>{sample.assignedSurveyorId || 'Unassigned'}</td>
+              <td>{sample.assignedSurveyorId || '미배정'}</td>
               <td>
                 <span className={`status ${sample.status}`}>{STATUS_LABELS[sample.status]}</span>
               </td>
               <td>
-                <Link className="button" href={`/survey/${sample.id}`}>
-                  Survey
+                <Link className="button" href={`/survey/${encodeURIComponent(sample.id)}`}>
+                  조사 시작
                 </Link>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {visibleSamples.length === 0 ? <p className="muted">No assigned samples.</p> : null}
+      {visibleSamples.length === 0 ? <p className="muted">배정된 표본이 없습니다.</p> : null}
     </section>
   )
 }

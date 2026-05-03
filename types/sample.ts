@@ -1,6 +1,14 @@
 export type CropType = 'apple' | 'pear'
 
-export type SampleStatus = 'pending' | 'in_progress' | 'submitted' | 'qa_issue' | 'approved' | 'rejected'
+export type SampleStatus =
+  | 'pending'
+  | 'draft'
+  | 'submitted'
+  | 'qa_required'
+  | 'approved'
+  | 'rejected'
+  | 'in_progress'
+  | 'qa_issue'
 
 export interface Coordinate {
   latitude: number

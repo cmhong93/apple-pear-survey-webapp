@@ -1,10 +1,12 @@
 import type { CropType } from './sample'
 
-export type SurveyFieldType = 'text' | 'number' | 'date' | 'select' | 'textarea' | 'boolean'
+export type SurveyFieldType = 'text' | 'number' | 'date' | 'select' | 'textarea' | 'boolean' | 'checkbox'
 
 export interface SurveyCondition {
-  fieldId: string
-  equals: string | number | boolean
+  target: 'crop' | 'variety' | 'surveyType' | 'field'
+  fieldId?: string
+  equals?: string | number | boolean
+  includes?: string
 }
 
 export interface SurveyFieldOption {
@@ -17,16 +19,24 @@ export interface SurveyField {
   label: string
   type: SurveyFieldType
   required?: boolean
+  section?: string
+  help?: string
   unit?: string
   options?: SurveyFieldOption[]
   condition?: SurveyCondition
   placeholder?: string
+  multiple?: boolean
+  repeatGroup?: string
+  min?: number
+  max?: number
+  inputMode?: 'text' | 'numeric' | 'decimal'
 }
 
 export interface SurveyTemplate {
   id: string
-  crop: CropType
+  crop?: CropType | 'all'
   version: string
   title: string
+  description?: string
   fields: SurveyField[]
 }

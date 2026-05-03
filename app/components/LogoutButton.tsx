@@ -8,7 +8,7 @@ export function LogoutButton() {
 
   return (
     <button className="button" type="button" onClick={logout}>
-      Logout
+      로그아웃
     </button>
   )
 }

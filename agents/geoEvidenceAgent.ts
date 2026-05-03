@@ -11,7 +11,7 @@ export function runGeoEvidenceAgent(sample: Sample, submission: Partial<SurveySu
     if (distance > 300) {
       findings.push({
         code: 'app_gps_far_from_sample',
-        message: `App GPS is ${Math.round(distance)}m from the sample coordinate.`,
+        message: `앱 GPS가 표본 좌표에서 ${Math.round(distance)}m 떨어져 있습니다.`,
         severity: 'warning',
       })
     }
@@ -22,7 +22,7 @@ export function runGeoEvidenceAgent(sample: Sample, submission: Partial<SurveySu
     if (distance > 100) {
       findings.push({
         code: 'gps_sources_mismatch',
-        message: `App GPS and MyGPS660 differ by ${Math.round(distance)}m.`,
+        message: `앱 GPS와 MyGPS660 좌표가 ${Math.round(distance)}m 차이납니다.`,
         severity: 'warning',
       })
     }

@@ -72,7 +72,7 @@ export function authenticateMvpLogin(identifier: string, secret: string): LoginR
     return {
       ok: true,
       redirectTo: '/survey',
-      message: 'Surveyor login accepted.',
+      message: '조사원 로그인이 완료되었습니다.',
       session: {
         role: 'surveyor',
         userId: surveyor.id,
@@ -86,7 +86,7 @@ export function authenticateMvpLogin(identifier: string, secret: string): LoginR
     return {
       ok: true,
       redirectTo: '/admin',
-      message: 'Admin login accepted.',
+      message: '관리자 로그인이 완료되었습니다.',
       session: {
         role: 'admin',
         userId: ADMIN_ROLE,
@@ -95,7 +95,7 @@ export function authenticateMvpLogin(identifier: string, secret: string): LoginR
     }
   }
 
-  return { ok: false, message: 'Invalid ID or secret.' }
+  return { ok: false, message: 'ID 또는 비밀번호가 올바르지 않습니다.' }
 }
 
 export function createSessionToken(session: UserSession) {

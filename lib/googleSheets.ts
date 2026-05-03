@@ -216,6 +216,18 @@ export async function readSurveySubmissions() {
   return mapSheetRows(result.data.values)
 }
 
+export async function readSurveyAnswers() {
+  const client = await getSheetsClient()
+  if (!client) return []
+
+  const result = await client.sheets.spreadsheets.values.get({
+    spreadsheetId: client.spreadsheetId,
+    range: `${SURVEY_ANSWERS_SHEET}!A:Z`,
+  })
+
+  return mapSheetRows(result.data.values)
+}
+
 export async function appendSurveySubmission(submission: SurveySubmission) {
   return appendRows(SURVEY_SUBMISSIONS_SHEET, [
     [
@@ -223,6 +235,7 @@ export async function appendSurveySubmission(submission: SurveySubmission) {
       submission.sampleId,
       submission.surveyorId,
       submission.templateId,
+      submission.surveyType ?? '',
       submission.status,
       submission.submittedAt ?? '',
       submission.createdAt,
@@ -237,7 +250,12 @@ export async function appendSurveyAnswers(submissionId: string, answers: SurveyA
     answers.map((answer) => [
       submissionId,
       answer.fieldId,
-      typeof answer.value === 'boolean' ? String(answer.value) : answer.value,
+      answer.fieldLabel,
+      Array.isArray(answer.value)
+        ? answer.value.join(', ')
+        : typeof answer.value === 'boolean'
+          ? String(answer.value)
+          : answer.value,
     ]),
   )
 }

@@ -20,6 +20,6 @@ export function distanceMeters(a: Coordinate, b: Coordinate) {
 }
 
 export function formatCoordinate(coordinate?: Coordinate) {
-  if (!coordinate) return 'Not captured'
+  if (!coordinate) return '수집 안 됨'
   return `${coordinate.latitude.toFixed(6)}, ${coordinate.longitude.toFixed(6)}`
 }

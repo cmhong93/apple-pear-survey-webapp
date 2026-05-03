@@ -1,4 +1,5 @@
 import { REQUIRED_PHOTO_TYPES } from '@/data/constants'
+import { photoTypeLabelKo } from '@/lib/koreanLabels'
 import type { QaFinding } from '@/types/qa'
 import type { SurveySubmission } from '@/types/submission'
 
@@ -8,7 +9,7 @@ export function runRuleValidationAgent(submission: Partial<SurveySubmission>): Q
   if (!submission.appGps) {
     findings.push({
       code: 'missing_app_gps',
-      message: 'App GPS evidence is missing.',
+      message: '앱 GPS 증빙이 누락되었습니다.',
       severity: 'error',
     })
   }
@@ -16,7 +17,7 @@ export function runRuleValidationAgent(submission: Partial<SurveySubmission>): Q
   if (!submission.myGps660Coordinate) {
     findings.push({
       code: 'missing_mygps660',
-      message: 'MyGPS660 coordinate evidence is missing.',
+      message: 'MyGPS660 좌표 증빙이 누락되었습니다.',
       severity: 'error',
     })
   }
@@ -26,7 +27,7 @@ export function runRuleValidationAgent(submission: Partial<SurveySubmission>): Q
     if (!providedPhotoTypes.has(photoType)) {
       findings.push({
         code: `missing_photo_${photoType}`,
-        message: `${photoType} photo evidence is missing.`,
+        message: `${photoTypeLabelKo(photoType)}이 누락되었습니다.`,
         severity: 'warning',
       })
     }

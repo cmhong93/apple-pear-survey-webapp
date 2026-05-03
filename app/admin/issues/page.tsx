@@ -8,12 +8,12 @@ export default async function AdminIssuesPage() {
 
   return (
     <section className="hero-panel">
-      <span className="eyebrow">Agentic QA</span>
-      <h1>QA issues</h1>
-      <p className="muted">Rule, geo, vision, and evidence matching issues will appear here.</p>
+      <span className="eyebrow">보완 검수</span>
+      <h1>보완필요 목록</h1>
+      <p className="muted">규칙 검수, 위치 증빙, 사진 증빙 보완요청이 여기에 표시됩니다.</p>
       <div className="card">
-        <h3>No open mock issues</h3>
-        <p>Run `/api/qa` with a submission payload to generate MVP issue stubs.</p>
+        <h3>현재 열린 보완요청 없음</h3>
+        <p>제출값 검수 결과가 발생하면 보완요청으로 표시됩니다.</p>
       </div>
     </section>
   )

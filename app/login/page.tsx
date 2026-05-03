@@ -10,12 +10,12 @@ export default async function LoginPage() {
 
   return (
     <section className="hero-panel">
-      <span className="eyebrow">Access</span>
-      <h1>Surveyor and admin login</h1>
-      <p className="muted">MVP shell for simple ID/PIN login. Real auth rules land in the next PR.</p>
+      <span className="eyebrow">로그인</span>
+      <h1>조사원·관리자 로그인</h1>
+      <p className="muted">조사원 ID 또는 관리자 ID와 비밀번호를 입력하세요.</p>
       <LoginForm />
       <div className="card">
-        <h3>MVP surveyors</h3>
+        <h3>조사원 ID</h3>
         <p>{MVP_SURVEYORS.map((surveyor) => surveyor.id).join(', ')}</p>
       </div>
     </section>

@@ -6,6 +6,6 @@ export function runFormGuideAgent(template: SurveyTemplate) {
     templateId: template.id,
     hints: template.fields
       .filter((field) => field.required)
-      .map((field) => `${field.label} is required before submission.`),
+      .map((field) => `${field.label}은(는) 제출 전에 입력해야 합니다.`),
   }
 }
