@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "lint": "eslint .",
+    "test:rules": "node --test --experimental-strip-types --loader ./tests/ts-alias-loader.mjs tests/ruleValidationAgent.test.ts",
     "start": "next start"
   },
   "dependencies": {
