@@ -105,21 +105,30 @@ async function getDriveClient() {
 }
 
 export async function uploadOriginalPhoto(file: File, name: string) {
+  const buffer = Buffer.from(await file.arrayBuffer())
+  return uploadOriginalPhotoBuffer(buffer, name, file.type || 'application/octet-stream', file.size)
+}
+
+export async function uploadOriginalPhotoBuffer(
+  buffer: Buffer,
+  name: string,
+  mimeType = 'application/octet-stream',
+  sizeBytes = buffer.byteLength,
+) {
   const client = await getDriveClient()
   if (!client) {
     throw new GoogleDriveConfigurationError('Drive not configured. Photo upload is not ready.')
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer())
   const result = await client.drive.files.create({
     supportsAllDrives: true,
     requestBody: {
       name,
       parents: [client.folderId],
-      mimeType: file.type || 'application/octet-stream',
+      mimeType,
     },
     media: {
-      mimeType: file.type || 'application/octet-stream',
+      mimeType,
       body: Readable.from(buffer),
     },
     fields: 'id,name,mimeType,size',
@@ -132,8 +141,8 @@ export async function uploadOriginalPhoto(file: File, name: string) {
   return {
     fileId: result.data.id,
     name: result.data.name ?? name,
-    mimeType: result.data.mimeType ?? file.type,
-    size: Number(result.data.size ?? file.size),
+    mimeType: result.data.mimeType ?? mimeType,
+    size: Number(result.data.size ?? sizeBytes),
   }
 }
 

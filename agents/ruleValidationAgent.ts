@@ -9,6 +9,7 @@ const MONTH_DAY_PATTERN = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
 const YEAR_MONTH_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const DEFAULT_MYGPS660_LAT = 36
 const DEFAULT_MYGPS660_LNG = 127
+const REQUIRED_PHOTO_TYPE_SET = new Set<PhotoType>(REQUIRED_PHOTO_TYPES)
 
 const DATE_FIELD_IDS = new Set([
   'flowering_start_date',
@@ -28,8 +29,6 @@ const DATE_FIELD_IDS = new Set([
   'growth_9_first_harvest_expected_date',
   'growth_9_expected_final_survey_date',
 ])
-
-const REQUIRED_PHOTO_TYPE_SET = new Set<PhotoType>(REQUIRED_PHOTO_TYPES)
 
 function error(code: string, message: string): QaFinding {
   return { code, message, severity: 'error' }
@@ -65,10 +64,6 @@ function isRatioAnswer(answer: SurveyAnswer) {
     answer.fieldLabel.includes('비율') ||
     answer.fieldLabel.includes('(%)')
   )
-}
-
-function isPresent(value: string) {
-  return value.length > 0
 }
 
 function dateOrdinal(value: string) {
@@ -108,7 +103,6 @@ function validateCoordinate(
     hardErrors.push(error(`missing_${codePrefix}`, `${label}가 누락되었습니다.`))
     return
   }
-
   if (coordinate.latitude < 33 || coordinate.latitude > 39) {
     hardErrors.push(error(`invalid_${codePrefix}_latitude`, `${label} 위도는 33~39 범위여야 합니다.`))
   }
@@ -117,10 +111,10 @@ function validateCoordinate(
   }
 }
 
-function validateRequiredAnswers(hardErrors: QaFinding[], answers?: SurveyAnswer[]) {
-  for (const answer of answers ?? []) {
+function validateRequiredAnswers(hardErrors: QaFinding[], answers: SurveyAnswer[]) {
+  for (const answer of answers) {
     const value = answerValue(answer)
-    if ((answer.required || answer.fieldLabel.endsWith('*')) && !isPresent(value)) {
+    if ((answer.required || answer.fieldLabel.endsWith('*')) && !value) {
       hardErrors.push(
         error(
           `missing_required_answer_${answer.fieldId}`,
@@ -193,8 +187,7 @@ function validatePlantingDensity(warnings: QaFinding[], answers: Map<string, Sur
   if (![area, trees, rowDistance, treeDistance].every(Number.isFinite)) return
   if (area <= 0 || trees <= 0 || rowDistance <= 0 || treeDistance <= 0) return
 
-  const squareMeters = area * 3.3058
-  const expectedTrees = squareMeters / (rowDistance * treeDistance)
+  const expectedTrees = (area * 3.3058) / (rowDistance * treeDistance)
   const ratio = trees / expectedTrees
   if (ratio < 0.5 || ratio > 1.8) {
     warnings.push(
@@ -207,16 +200,50 @@ function validatePlantingDensity(warnings: QaFinding[], answers: Map<string, Sur
 }
 
 function validatePhotos(hardErrors: QaFinding[], submission: Partial<SurveySubmission>) {
+  const media = submission.media ?? []
+  const myGps660Media = media.find((item) => item.photoType === 'mygps660_screen')
   const uploadedPhotoTypes = new Set(
-    (submission.media ?? [])
-      .filter((item) => item.originalDriveFileId || item.watermarkedDriveFileId)
-      .map((item) => item.photoType),
+    media.filter((item) => item.originalDriveFileId || item.watermarkedDriveFileId).map((item) => item.photoType),
   )
 
   for (const photoType of REQUIRED_PHOTO_TYPE_SET) {
     if (!uploadedPhotoTypes.has(photoType)) {
       hardErrors.push(error(`missing_photo_${photoType}`, `${photoTypeLabelKo(photoType)} 업로드가 완료되지 않았습니다.`))
     }
+  }
+
+  if (!myGps660Media) return
+  if (!myGps660Media.manualMyGps660Coordinate?.lat || !myGps660Media.manualMyGps660Coordinate?.lng) {
+    hardErrors.push(error('missing_mygps660_manual_coordinate', 'MyGPS660 화면 사진 업로드 시 수동 입력 좌표가 필요합니다.'))
+  }
+  if (myGps660Media.gpsCrossCheckStatus === 'matched') return
+  if (myGps660Media.gpsCrossCheckStatus === 'mismatch') {
+    hardErrors.push(
+      error(
+        'mygps660_cross_check_mismatch',
+        myGps660Media.gpsCrossCheckMessage ||
+          '수동 입력한 GPS 좌표와 MyGPS660 화면 사진의 좌표가 일치하지 않습니다.',
+      ),
+    )
+    return
+  }
+  if (myGps660Media.gpsCrossCheckStatus === 'unreadable') {
+    hardErrors.push(
+      error(
+        'mygps660_cross_check_unreadable',
+        myGps660Media.gpsCrossCheckMessage ||
+          '사진에서 MyGPS660 좌표를 판독하지 못했습니다. 화면이 선명하게 보이도록 다시 촬영해 주세요.',
+      ),
+    )
+    return
+  }
+  if (myGps660Media.gpsCrossCheckStatus === 'not_run' || !myGps660Media.gpsCrossCheckStatus) {
+    hardErrors.push(
+      error(
+        'mygps660_cross_check_not_run',
+        myGps660Media.gpsCrossCheckMessage || 'MyGPS660 좌표 검증이 완료되지 않았습니다. 사진을 다시 업로드해 주세요.',
+      ),
+    )
   }
 }
 

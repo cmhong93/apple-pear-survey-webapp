@@ -65,6 +65,8 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
   const [selectedTemplateId, setSelectedTemplateId] = useState(templates[0]?.id ?? '')
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
   const [appGps, setAppGps] = useState<Coordinate | undefined>()
+  const [myGps660Lat, setMyGps660Lat] = useState('')
+  const [myGps660Lng, setMyGps660Lng] = useState('')
   const [gpsMessage, setGpsMessage] = useState('')
   const [media, setMedia] = useState<MediaArtifact[]>([])
   const [message, setMessage] = useState('')
@@ -80,7 +82,12 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
   const fieldsBySection = groupBySection(visibleFields)
 
   function captureGps() {
-    setGpsMessage('GPS를 수집하는 중입니다...')
+    if (!navigator.geolocation) {
+      setGpsMessage('이 브라우저에서는 GPS 수집을 지원하지 않습니다.')
+      return
+    }
+
+    setGpsMessage('위치 권한을 허용해 주세요.')
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setAppGps({
@@ -88,10 +95,18 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
           longitude: position.coords.longitude,
           accuracyMeters: position.coords.accuracy,
         })
-        setGpsMessage('GPS 수집이 완료되었습니다.')
+        setGpsMessage('GPS 수집 완료')
       },
-      () => {
-        setGpsMessage('GPS 수집에 실패했습니다. 태블릿 위치 권한을 확인하세요.')
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setGpsMessage('위치 권한이 거부되었습니다. 브라우저/태블릿 설정에서 위치 권한을 허용해 주세요.')
+          return
+        }
+        if (error.code === error.TIMEOUT) {
+          setGpsMessage('GPS 수집 시간이 초과되었습니다. 하늘이 보이는 곳에서 다시 시도해 주세요.')
+          return
+        }
+        setGpsMessage('GPS 수집 실패')
       },
       { enableHighAccuracy: true, timeout: 10000 },
     )
@@ -105,6 +120,10 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
     formData.set('file', file)
     formData.set('sampleId', sample.id)
     formData.set('photoType', photoType)
+    if (photoType === 'mygps660_screen') {
+      formData.set('manual_lat', myGps660Lat)
+      formData.set('manual_lng', myGps660Lng)
+    }
 
     const response = await fetch('/api/upload', {
       method: 'POST',
@@ -369,18 +388,31 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
         <div className="grid">
           <label className="field">
             MyGPS660 위도
-            <input name="mygps660_lat" inputMode="decimal" placeholder="36.000000" />
+            <input
+              name="mygps660_lat"
+              inputMode="decimal"
+              placeholder="36.000000"
+              value={myGps660Lat}
+              onChange={(event) => setMyGps660Lat(event.target.value)}
+            />
           </label>
           <label className="field">
             MyGPS660 경도
-            <input name="mygps660_lng" inputMode="decimal" placeholder="127.000000" />
+            <input
+              name="mygps660_lng"
+              inputMode="decimal"
+              placeholder="127.000000"
+              value={myGps660Lng}
+              onChange={(event) => setMyGps660Lng(event.target.value)}
+            />
           </label>
         </div>
       </div>
 
       <div className="card">
         <h3>사진 업로드</h3>
-        <p className="muted">사진은 Google Drive 업로드가 완료되어야 최종 제출할 수 있습니다.</p>
+        <p className="muted">태블릿 카메라로 촬영 후 업로드하세요. Drive 업로드가 완료되어야 제출할 수 있습니다.</p>
+        <p className="muted">MyGPS660 화면 사진은 위도/경도 수동 입력값과 사진 판독값이 일치해야 합니다.</p>
         <div className="grid">
           {REQUIRED_PHOTO_TYPES.map((photoType) => (
             <label className="field" key={photoType}>

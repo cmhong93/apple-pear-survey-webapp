@@ -10,6 +10,30 @@ export type PhotoType =
   | 'damage_photo'
   | 'paper_form_photo'
 
+export type GpsCrossCheckStatus = 'not_applicable' | 'matched' | 'mismatch' | 'unreadable' | 'not_run'
+
+export interface GeminiQaImageMeta {
+  mimeType: 'image/jpeg'
+  width: number
+  height: number
+  maxLongSide: 1280
+  jpegQuality: 72
+  metadataRemoved: boolean
+  byteSize: number
+}
+
+export interface MyGps660ExtractedCoordinate {
+  lat: number | null
+  lng: number | null
+  confidence?: number
+  summaryKo?: string
+}
+
+export interface MyGps660ManualCoordinate {
+  lat: number | null
+  lng: number | null
+}
+
 export interface MediaArtifact {
   id: string
   sampleId: string
@@ -25,6 +49,11 @@ export interface MediaArtifact {
   watermarkedDriveFileId?: string
   visionQaFindings?: QaFinding[]
   visionQaSummary?: string
+  geminiQaImageMeta?: GeminiQaImageMeta
+  extractedMyGps660Coordinate?: MyGps660ExtractedCoordinate
+  manualMyGps660Coordinate?: MyGps660ManualCoordinate
+  gpsCrossCheckStatus?: GpsCrossCheckStatus
+  gpsCrossCheckMessage?: string
 }
 
 export interface WatermarkPayload {
