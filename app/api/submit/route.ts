@@ -10,6 +10,7 @@ import {
   appendSurveySubmission,
   isSheetsConfigError,
   readSampleMaster,
+  updateSampleStatus,
 } from '@/lib/googleSheets'
 import { MESSAGES_KO } from '@/lib/koreanLabels'
 import type { MediaArtifact } from '@/types/media'
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
     await appendGpsLog(submission)
     if (media.length > 0) await appendMediaFiles(media)
     if (requestedStatus === 'submitted' && qa.issues.length > 0) await appendQaIssues(qa.issues)
+    await updateSampleStatus(payload.sampleId, requestedStatus === 'draft' ? 'draft' : 'submitted')
 
     return NextResponse.json({
       ok: true,

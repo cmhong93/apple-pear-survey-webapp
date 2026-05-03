@@ -128,6 +128,17 @@ function mapSheetRows(values?: sheets_v4.Schema$ValueRange['values']): SheetRow[
     )
 }
 
+function columnLetter(index: number) {
+  let letter = ''
+  let current = index + 1
+  while (current > 0) {
+    const remainder = (current - 1) % 26
+    letter = String.fromCharCode(65 + remainder) + letter
+    current = Math.floor((current - 1) / 26)
+  }
+  return letter
+}
+
 function normalizeCrop(raw: string) {
   if (raw.includes('배') || raw.toLowerCase() === 'pear') return 'pear'
   return 'apple'
@@ -202,6 +213,41 @@ export async function readSampleMaster(): Promise<Sample[]> {
   return mapSheetRows(result.data.values)
     .map(rowToSample)
     .filter((sample) => sample.id)
+}
+
+export async function updateSampleStatus(sampleId: string, status: SampleStatus) {
+  const client = await getSheetsClient()
+  if (!client) return { configured: false, updatedRows: 0 }
+
+  const result = await client.sheets.spreadsheets.values.get({
+    spreadsheetId: client.spreadsheetId,
+    range: `${SAMPLE_MASTER_SHEET}!A:Z`,
+  })
+  const [headers = [], ...rows] = result.data.values ?? []
+  const sampleIdIndex = headers.findIndex((header) => String(header).trim() === 'sample_id')
+  const statusIndex = headers.findIndex((header) => String(header).trim() === 'status')
+  if (sampleIdIndex < 0 || statusIndex < 0) {
+    throw new Error('sample_master must include sample_id and status columns.')
+  }
+
+  const rowOffset = rows.findIndex((row) => String(row[sampleIdIndex] ?? '').trim() === sampleId)
+  if (rowOffset < 0) return { configured: true, updatedRows: 0 }
+
+  const rowNumber = rowOffset + 2
+  const statusColumn = columnLetter(statusIndex)
+  const update = await client.sheets.spreadsheets.values.update({
+    spreadsheetId: client.spreadsheetId,
+    range: `${SAMPLE_MASTER_SHEET}!${statusColumn}${rowNumber}`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [[status]],
+    },
+  })
+
+  return {
+    configured: true,
+    updatedRows: update.data.updatedRows ?? 1,
+  }
 }
 
 export async function readSurveySubmissions() {
