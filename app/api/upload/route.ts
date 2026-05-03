@@ -4,6 +4,7 @@ import { appendMediaFiles } from '@/lib/googleSheets'
 import { isDriveConfigError, uploadOriginalPhoto } from '@/lib/googleDrive'
 import { getSession } from '@/lib/auth'
 import { MESSAGES_KO, photoTypeLabelKo } from '@/lib/koreanLabels'
+import { runGeminiVisionQa } from '@/lib/gemini'
 import type { PhotoType } from '@/types/media'
 
 export async function POST(request: Request) {
@@ -28,6 +29,27 @@ export async function POST(request: Request) {
   )
 
   try {
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const visionQaFindings =
+      buffer.byteLength <= 15 * 1024 * 1024
+        ? await runGeminiVisionQa({
+            photoType,
+            mimeType: file.type || 'image/jpeg',
+            base64Image: buffer.toString('base64'),
+          }).catch((error) => [
+            {
+              code: 'vision_qa_runtime_failed',
+              message: error instanceof Error ? error.message : 'Gemini 사진 검수 실행에 실패했습니다.',
+              severity: 'warning' as const,
+            },
+          ])
+        : [
+            {
+              code: 'vision_qa_file_too_large',
+              message: '사진 용량이 커서 Gemini 사진 검수를 건너뛰었습니다.',
+              severity: 'warning' as const,
+            },
+          ]
     const uploaded = await uploadOriginalPhoto(file, safeFileName)
     const artifact = {
       id: mediaId,
@@ -38,6 +60,8 @@ export async function POST(request: Request) {
       sizeBytes: uploaded.size || file.size,
       capturedAt: new Date().toISOString(),
       originalDriveFileId: uploaded.fileId,
+      visionQaFindings,
+      visionQaSummary: visionQaFindings.map((finding) => finding.message).join(' / '),
     }
 
     await appendMediaFiles([artifact])

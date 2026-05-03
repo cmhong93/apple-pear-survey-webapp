@@ -186,11 +186,32 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
         ? { latitude: myGps660Lat, longitude: myGps660Lng }
         : undefined
 
+    if (!appGps) {
+      setIsSubmitting(false)
+      setMessage('제출 전 GPS 수집이 필요합니다.')
+      return
+    }
+
+    if (!myGps660Coordinate) {
+      setIsSubmitting(false)
+      setMessage('제출 전 MyGPS660 좌표를 입력하세요.')
+      return
+    }
+
+    const uploadedPhotoTypes = new Set(media.map((item) => item.photoType))
+    const missingPhotoType = REQUIRED_PHOTO_TYPES.find((photoType) => !uploadedPhotoTypes.has(photoType))
+    if (missingPhotoType) {
+      setIsSubmitting(false)
+      setMessage(`${photoTypeLabelKo(missingPhotoType)}을(를) 먼저 업로드하세요.`)
+      return
+    }
+
     const answers = visibleFields.map((field) => {
       const values = formData.getAll(field.id).map((value) => String(value))
       return {
         fieldId: field.id,
         fieldLabel: field.label,
+        required: field.required,
         value: field.type === 'checkbox' ? values : String(formData.get(field.id) ?? ''),
       }
     })
@@ -202,6 +223,17 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
     if (invalidDateField) {
       setIsSubmitting(false)
       setMessage(`${invalidDateField.label}은(는) MM-DD 형식으로 입력하세요. 예: 06-15`)
+      return
+    }
+
+    const missingRequiredField = visibleFields.find((field) => {
+      if (!field.required) return false
+      const values = formData.getAll(field.id).map((value) => String(value).trim())
+      return values.length === 0 || values.every((value) => !value)
+    })
+    if (missingRequiredField) {
+      setIsSubmitting(false)
+      setMessage(`${missingRequiredField.label}은(는) 필수 입력값입니다.`)
       return
     }
 

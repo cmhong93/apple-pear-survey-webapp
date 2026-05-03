@@ -28,7 +28,20 @@ export function runRuleValidationAgent(submission: Partial<SurveySubmission>): Q
       findings.push({
         code: `missing_photo_${photoType}`,
         message: `${photoTypeLabelKo(photoType)}이 누락되었습니다.`,
-        severity: 'warning',
+        severity: 'error',
+      })
+    }
+  }
+
+  const requiredAnswers =
+    submission.answers?.filter((answer) => answer.required || answer.fieldLabel.endsWith('*')) ?? []
+  for (const answer of requiredAnswers) {
+    const value = Array.isArray(answer.value) ? answer.value.join('') : String(answer.value ?? '').trim()
+    if (!value) {
+      findings.push({
+        code: `missing_required_answer_${answer.fieldId}`,
+        message: `${answer.fieldLabel.replace(/\s\*$/, '')} 필수값이 누락되었습니다.`,
+        severity: 'error',
       })
     }
   }

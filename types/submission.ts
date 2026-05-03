@@ -7,6 +7,7 @@ export interface SurveyAnswer {
   fieldId: string
   fieldLabel: string
   value: string | number | boolean | string[] | null
+  required?: boolean
 }
 
 export interface SurveySubmission {

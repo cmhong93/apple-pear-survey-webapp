@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
-import { runIssueGenerationAgent } from '@/agents/issueGenerationAgent'
-import { runRuleValidationAgent } from '@/agents/ruleValidationAgent'
+import { runPreSubmitQa } from '@/agents/qaOrchestrator'
 import { MESSAGES_KO } from '@/lib/koreanLabels'
 import {
   appendGpsLog,
@@ -10,8 +9,9 @@ import {
   appendSurveyAnswers,
   appendSurveySubmission,
   isSheetsConfigError,
+  readSampleMaster,
 } from '@/lib/googleSheets'
-import { getSession } from '@/lib/auth'
+import { canAccessSample, getSession } from '@/lib/auth'
 import type { Coordinate } from '@/types/sample'
 import type { SurveyAnswer, SurveySubmission } from '@/types/submission'
 import type { MediaArtifact } from '@/types/media'
@@ -63,23 +63,41 @@ export async function POST(request: Request) {
     updatedAt: now,
   }
 
-  const findings = runRuleValidationAgent(submission)
-  const issues = runIssueGenerationAgent(payload.sampleId, findings).map((issue) => ({
-    ...issue,
-    submissionId,
-  }))
-
   try {
+    const sample = (await readSampleMaster()).find((item) => item.id === payload.sampleId)
+    if (!sample) {
+      return NextResponse.json({ ok: false, message: '표본 원장에서 해당 표본을 찾지 못했습니다.' }, { status: 404 })
+    }
+    if (!canAccessSample(session, sample.assignedSurveyorId)) {
+      return NextResponse.json({ ok: false, message: '이 표본에 접근할 권한이 없습니다.' }, { status: 403 })
+    }
+
+    const qa = await runPreSubmitQa({ sample, submission })
+    if (qa.blocked) {
+      if (qa.issues.length > 0) await appendQaIssues(qa.issues)
+      return NextResponse.json(
+        {
+          ok: false,
+          blocked: true,
+          findings: qa.findings,
+          issues: qa.issues,
+          message: qa.assistantSummary,
+        },
+        { status: 400 },
+      )
+    }
+
     await appendSurveySubmission(submission)
     await appendSurveyAnswers(submissionId, payload.answers)
     await appendGpsLog(submission)
     if (media.length > 0) await appendMediaFiles(media)
-    if (issues.length > 0) await appendQaIssues(issues)
+    if (qa.issues.length > 0) await appendQaIssues(qa.issues)
 
     return NextResponse.json({
       ok: true,
       submissionId,
-      qaIssueCount: issues.length,
+      qaIssueCount: qa.issues.length,
+      findings: qa.findings,
       message: MESSAGES_KO.submitSaved,
     })
   } catch (error) {

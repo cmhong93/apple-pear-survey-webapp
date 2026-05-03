@@ -290,6 +290,8 @@ export async function appendMediaFiles(media: MediaArtifact[]) {
       item.capturedAt,
       item.originalDriveFileId ?? '',
       item.watermarkedDriveFileId ?? '',
+      item.visionQaSummary ?? '',
+      item.visionQaFindings ? JSON.stringify(item.visionQaFindings) : '',
     ]),
   )
 }

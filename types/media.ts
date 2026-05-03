@@ -1,4 +1,5 @@
 import type { Coordinate } from './sample'
+import type { QaFinding } from './qa'
 
 export type PhotoType =
   | 'plot_photo'
@@ -22,6 +23,8 @@ export interface MediaArtifact {
   myGps660Coordinate?: Coordinate
   originalDriveFileId?: string
   watermarkedDriveFileId?: string
+  visionQaFindings?: QaFinding[]
+  visionQaSummary?: string
 }
 
 export interface WatermarkPayload {

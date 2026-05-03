@@ -25,4 +25,5 @@ export interface QaRunResult {
   findings: QaFinding[]
   issues: QaIssue[]
   assistantSummary: string
+  blocked: boolean
 }
