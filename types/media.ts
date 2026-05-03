@@ -46,6 +46,8 @@ export interface MediaArtifact {
   appGps?: Coordinate
   myGps660Coordinate?: Coordinate
   originalDriveFileId?: string
+  originalFileUrl?: string
+  storageProvider?: 'google_drive' | 'vercel_blob'
   watermarkedDriveFileId?: string
   visionQaFindings?: QaFinding[]
   visionQaSummary?: string

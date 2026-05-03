@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { appendMediaFiles } from '@/lib/googleSheets'
-import { isDriveConfigError, uploadOriginalPhotoBuffer } from '@/lib/googleDrive'
+import { isDriveConfigError } from '@/lib/googleDrive'
 import { getSession, isTestSampleId, isTestSurveyorId } from '@/lib/auth'
 import { MESSAGES_KO, photoTypeLabelKo } from '@/lib/koreanLabels'
 import { extractMyGps660Coordinate, runGeminiVisionQa } from '@/lib/gemini'
 import { createGeminiQaImage } from '@/lib/imageResize'
+import { uploadPhotoEvidence } from '@/lib/photoStorage'
 import type { GpsCrossCheckStatus, MediaArtifact, PhotoType } from '@/types/media'
 import type { QaFinding } from '@/types/qa'
 
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
 
   try {
     const originalBuffer = Buffer.from(await file.arrayBuffer())
-    const uploaded = await uploadOriginalPhotoBuffer(
+    const uploaded = await uploadPhotoEvidence(
       originalBuffer,
       safeFileName,
       file.type || 'application/octet-stream',
@@ -164,6 +165,8 @@ export async function POST(request: Request) {
       sizeBytes: uploaded.size || file.size,
       capturedAt: new Date().toISOString(),
       originalDriveFileId: uploaded.fileId,
+      originalFileUrl: uploaded.url,
+      storageProvider: uploaded.provider,
       visionQaFindings,
       visionQaSummary: visionQaFindings.map((finding) => finding.message).join(' / '),
       geminiQaImageMeta: qaImage?.meta,
