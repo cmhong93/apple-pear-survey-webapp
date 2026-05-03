@@ -15,7 +15,21 @@ function isLocalDevelopment() {
 }
 
 function getDriveFolderId() {
-  return process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID || process.env.GOOGLE_DRIVE_FOLDER_ID || ''
+  return envValue('GOOGLE_DRIVE_ROOT_FOLDER_ID') || envValue('GOOGLE_DRIVE_FOLDER_ID')
+}
+
+function envValue(name: string) {
+  return (process.env[name] ?? '').trim().replace(/^["']|["']$/g, '')
+}
+
+function getOAuthCredentials() {
+  const clientId = envValue('GOOGLE_OAUTH_CLIENT_ID')
+  const clientSecret = envValue('GOOGLE_OAUTH_CLIENT_SECRET')
+  const refreshToken = envValue('GOOGLE_OAUTH_REFRESH_TOKEN')
+
+  if (!clientId || !clientSecret || !refreshToken) return null
+
+  return { clientId, clientSecret, refreshToken }
 }
 
 function getServiceAccountJson() {
@@ -50,19 +64,31 @@ function normalizePrivateKey(value: string) {
 export function isGoogleDriveConfigured() {
   return Boolean(
     getDriveFolderId() &&
-      (process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ||
+      (getOAuthCredentials() ||
+        process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ||
         (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY)),
   )
 }
 
 async function getDriveClient() {
   const folderId = getDriveFolderId()
+  const oauthCredentials = getOAuthCredentials()
+  if (folderId && oauthCredentials) {
+    const auth = new google.auth.OAuth2(oauthCredentials.clientId, oauthCredentials.clientSecret)
+    auth.setCredentials({ refresh_token: oauthCredentials.refreshToken })
+
+    return {
+      folderId,
+      drive: google.drive({ version: 'v3', auth }),
+    }
+  }
+
   const credentials = getServiceAccountJson()
 
   if (!folderId || !credentials) {
     if (isLocalDevelopment()) return null
     throw new GoogleDriveConfigurationError(
-      'Google Drive is not configured. Set GOOGLE_DRIVE_ROOT_FOLDER_ID plus GOOGLE_SERVICE_ACCOUNT_JSON_BASE64, or GOOGLE_SERVICE_ACCOUNT_EMAIL plus GOOGLE_PRIVATE_KEY.',
+      'Google Drive is not configured. Set GOOGLE_DRIVE_ROOT_FOLDER_ID plus Google OAuth credentials, GOOGLE_SERVICE_ACCOUNT_JSON_BASE64, or GOOGLE_SERVICE_ACCOUNT_EMAIL plus GOOGLE_PRIVATE_KEY.',
     )
   }
 
@@ -86,6 +112,7 @@ export async function uploadOriginalPhoto(file: File, name: string) {
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const result = await client.drive.files.create({
+    supportsAllDrives: true,
     requestBody: {
       name,
       parents: [client.folderId],
