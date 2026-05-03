@@ -37,7 +37,7 @@ function getServiceAccountJson() {
     if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
       return {
         client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        private_key: normalizePrivateKey(process.env.GOOGLE_PRIVATE_KEY),
       }
     }
     return null
@@ -51,6 +51,13 @@ function getServiceAccountJson() {
   } catch {
     throw new GoogleSheetsConfigurationError('GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 is not valid base64 JSON.')
   }
+}
+
+function normalizePrivateKey(value: string) {
+  return value
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .replace(/\\n/g, '\n')
 }
 
 export function isGoogleSheetsConfigured() {
