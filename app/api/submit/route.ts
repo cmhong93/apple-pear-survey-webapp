@@ -27,6 +27,7 @@ interface SubmitPayload {
   appGps?: Coordinate
   myGps660Coordinate?: Coordinate
   media?: MediaArtifact[]
+  status?: 'draft' | 'submitted'
 }
 
 export async function POST(request: Request) {
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
     ...item,
     submissionId,
   }))
+  const requestedStatus = payload.status === 'draft' ? 'draft' : 'submitted'
 
   const submission: SurveySubmission = {
     id: submissionId,
@@ -53,7 +55,7 @@ export async function POST(request: Request) {
     surveyorId: session.surveyorId,
     templateId: payload.templateId || `${payload.crop || 'field'}-2026-v1`,
     surveyType: payload.surveyType,
-    status: 'submitted',
+    status: requestedStatus,
     answers: payload.answers,
     media,
     appGps: payload.appGps,
@@ -73,15 +75,13 @@ export async function POST(request: Request) {
     }
 
     const qa = await runPreSubmitQa({ sample, submission })
-    if (qa.blocked) {
-      if (qa.issues.length > 0) await appendQaIssues(qa.issues)
+    if (requestedStatus === 'submitted' && qa.blocked) {
       return NextResponse.json(
         {
           ok: false,
-          blocked: true,
-          findings: qa.findings,
-          issues: qa.issues,
-          message: qa.assistantSummary,
+          message: '제출할 수 없습니다.',
+          hardErrors: qa.hardErrors,
+          warnings: qa.warnings,
         },
         { status: 400 },
       )
@@ -91,14 +91,16 @@ export async function POST(request: Request) {
     await appendSurveyAnswers(submissionId, payload.answers)
     await appendGpsLog(submission)
     if (media.length > 0) await appendMediaFiles(media)
-    if (qa.issues.length > 0) await appendQaIssues(qa.issues)
+    if (requestedStatus === 'submitted' && qa.issues.length > 0) await appendQaIssues(qa.issues)
 
     return NextResponse.json({
       ok: true,
       submissionId,
       qaIssueCount: qa.issues.length,
       findings: qa.findings,
-      message: MESSAGES_KO.submitSaved,
+      hardErrors: qa.hardErrors,
+      warnings: qa.warnings,
+      message: requestedStatus === 'draft' ? '임시저장 완료' : `제출 완료: ${submissionId}`,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : MESSAGES_KO.submitFailed

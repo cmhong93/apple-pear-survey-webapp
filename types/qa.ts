@@ -9,6 +9,12 @@ export interface QaFinding {
   evidenceIds?: string[]
 }
 
+export interface RuleValidationResult {
+  hardErrors: QaFinding[]
+  warnings: QaFinding[]
+  canSubmit: boolean
+}
+
 export interface QaIssue {
   id: string
   sampleId: string
@@ -23,6 +29,9 @@ export interface QaIssue {
 export interface QaRunResult {
   submissionId?: string
   findings: QaFinding[]
+  hardErrors: QaFinding[]
+  warnings: QaFinding[]
+  canSubmit: boolean
   issues: QaIssue[]
   assistantSummary: string
   blocked: boolean

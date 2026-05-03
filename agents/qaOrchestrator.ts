@@ -13,23 +13,28 @@ interface RunPreSubmitQaOptions {
 }
 
 export async function runPreSubmitQa({ sample, submission }: RunPreSubmitQaOptions): Promise<QaRunResult> {
-  const ruleFindings = runRuleValidationAgent(submission)
+  const ruleResult = runRuleValidationAgent(submission)
   const geoFindings = sample ? runGeoEvidenceAgent(sample, submission) : []
   const visionFindings = await runVisionQaAgent(submission.media)
-  const findings = runEvidenceMatchingAgent([ruleFindings, geoFindings, visionFindings])
-  const issues = runIssueGenerationAgent(submission.sampleId, findings).map((issue) => ({
+  const warnings = runEvidenceMatchingAgent([ruleResult.warnings, geoFindings, visionFindings]).filter(
+    (finding) => finding.severity !== 'info',
+  )
+  const findings = runEvidenceMatchingAgent([ruleResult.hardErrors, warnings])
+  const issues = runIssueGenerationAgent(submission.sampleId, warnings).map((issue) => ({
     ...issue,
     submissionId: submission.id,
   }))
-  const blocked = findings.some((finding) => finding.severity === 'error')
 
   return {
     submissionId: submission.id,
     findings,
+    hardErrors: ruleResult.hardErrors,
+    warnings,
+    canSubmit: ruleResult.canSubmit,
     issues,
-    blocked,
-    assistantSummary: blocked
-      ? `제출 전 검증에서 차단 항목 ${findings.filter((finding) => finding.severity === 'error').length}건이 발견되었습니다.`
-      : `제출 전 검증이 완료되었습니다. 확인 항목 ${findings.length}건.`,
+    blocked: !ruleResult.canSubmit,
+    assistantSummary: ruleResult.canSubmit
+      ? `제출 전 검증이 완료되었습니다. 확인 필요 항목 ${warnings.length}건`
+      : `제출 전 검증에서 차단 항목 ${ruleResult.hardErrors.length}건이 발견되었습니다.`,
   }
 }

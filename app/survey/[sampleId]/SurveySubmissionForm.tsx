@@ -1,9 +1,11 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { runRuleValidationAgent } from '@/agents/ruleValidationAgent'
 import { REQUIRED_PHOTO_TYPES } from '@/data/constants'
 import { photoTypeLabelKo } from '@/lib/koreanLabels'
 import type { MediaArtifact, PhotoType } from '@/types/media'
+import type { QaFinding } from '@/types/qa'
 import type { Coordinate, Sample } from '@/types/sample'
 import type { SurveyField, SurveyTemplate } from '@/types/survey'
 
@@ -52,9 +54,11 @@ function groupBySection(fields: SurveyField[]) {
   }, {})
 }
 
-function isMonthDay(value: string) {
-  if (!value) return true
-  return /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(value)
+function parseCoordinateValue(value: FormDataEntryValue | null) {
+  const text = String(value ?? '').trim()
+  if (!text) return undefined
+  const numeric = Number(text)
+  return Number.isFinite(numeric) ? numeric : undefined
 }
 
 export function SurveySubmissionForm({ sample, templates }: SurveySubmissionFormProps) {
@@ -64,6 +68,8 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
   const [gpsMessage, setGpsMessage] = useState('')
   const [media, setMedia] = useState<MediaArtifact[]>([])
   const [message, setMessage] = useState('')
+  const [hardErrors, setHardErrors] = useState<QaFinding[]>([])
+  const [warnings, setWarnings] = useState<QaFinding[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) ?? templates[0]
@@ -115,8 +121,7 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
       return
     }
 
-    const uploadedMedia = result.media
-    setMedia((current) => [...current.filter((item) => item.photoType !== photoType), uploadedMedia])
+    setMedia((current) => [...current.filter((item) => item.photoType !== photoType), result.media as MediaArtifact])
     setMessage(`${photoTypeLabelKo(photoType)} 업로드가 완료되었습니다.`)
   }
 
@@ -130,9 +135,7 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
         setFieldValues((current) => ({ ...current, [field.id]: event.target.value })),
     }
 
-    if (field.type === 'textarea') {
-      return <textarea {...shared} />
-    }
+    if (field.type === 'textarea') return <textarea {...shared} />
 
     if (field.type === 'select') {
       return (
@@ -173,67 +176,62 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
     )
   }
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setIsSubmitting(true)
-    setMessage('')
-
-    const formData = new FormData(event.currentTarget)
-    const myGps660Lat = Number(formData.get('mygps660_lat'))
-    const myGps660Lng = Number(formData.get('mygps660_lng'))
+  function buildSubmission(formData: FormData, status: 'draft' | 'submitted') {
+    const myGps660Lat = parseCoordinateValue(formData.get('mygps660_lat'))
+    const myGps660Lng = parseCoordinateValue(formData.get('mygps660_lng'))
     const myGps660Coordinate =
-      Number.isFinite(myGps660Lat) && Number.isFinite(myGps660Lng)
+      myGps660Lat !== undefined && myGps660Lng !== undefined
         ? { latitude: myGps660Lat, longitude: myGps660Lng }
         : undefined
-
-    if (!appGps) {
-      setIsSubmitting(false)
-      setMessage('제출 전 GPS 수집이 필요합니다.')
-      return
-    }
-
-    if (!myGps660Coordinate) {
-      setIsSubmitting(false)
-      setMessage('제출 전 MyGPS660 좌표를 입력하세요.')
-      return
-    }
-
-    const uploadedPhotoTypes = new Set(media.map((item) => item.photoType))
-    const missingPhotoType = REQUIRED_PHOTO_TYPES.find((photoType) => !uploadedPhotoTypes.has(photoType))
-    if (missingPhotoType) {
-      setIsSubmitting(false)
-      setMessage(`${photoTypeLabelKo(missingPhotoType)}을(를) 먼저 업로드하세요.`)
-      return
-    }
-
+    const now = new Date().toISOString()
     const answers = visibleFields.map((field) => {
-      const values = formData.getAll(field.id).map((value) => String(value))
+      const values = formData.getAll(field.id).map((value) => String(value).trim())
       return {
         fieldId: field.id,
         fieldLabel: field.label,
         required: field.required,
-        value: field.type === 'checkbox' ? values : String(formData.get(field.id) ?? ''),
+        fieldType: field.type,
+        min: field.min,
+        max: field.max,
+        value: field.type === 'checkbox' ? values : String(formData.get(field.id) ?? '').trim(),
       }
     })
-    const invalidDateField = visibleFields.find((field) => {
-      if (field.type !== 'date') return false
-      return !isMonthDay(String(formData.get(field.id) ?? ''))
-    })
 
-    if (invalidDateField) {
-      setIsSubmitting(false)
-      setMessage(`${invalidDateField.label}은(는) MM-DD 형식으로 입력하세요. 예: 06-15`)
-      return
+    return {
+      id: 'client-preview',
+      sampleId: sample.id,
+      surveyorId: sample.assignedSurveyorId,
+      templateId: selectedTemplate.id,
+      surveyType: selectedTemplate.title,
+      status,
+      answers,
+      media,
+      appGps,
+      myGps660Coordinate,
+      createdAt: now,
+      updatedAt: now,
+      submittedAt: status === 'submitted' ? now : undefined,
     }
+  }
 
-    const missingRequiredField = visibleFields.find((field) => {
-      if (!field.required) return false
-      const values = formData.getAll(field.id).map((value) => String(value).trim())
-      return values.length === 0 || values.every((value) => !value)
-    })
-    if (missingRequiredField) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsSubmitting(true)
+    setMessage('')
+    setHardErrors([])
+    setWarnings([])
+
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null
+    const requestedStatus = submitter?.value === 'draft' ? 'draft' : 'submitted'
+    const formData = new FormData(event.currentTarget)
+    const submission = buildSubmission(formData, requestedStatus)
+    const validation = runRuleValidationAgent(submission)
+    setWarnings(validation.warnings)
+
+    if (requestedStatus === 'submitted' && !validation.canSubmit) {
+      setHardErrors(validation.hardErrors)
+      setMessage('제출할 수 없습니다. 아래 항목을 수정해 주세요.')
       setIsSubmitting(false)
-      setMessage(`${missingRequiredField.label}은(는) 필수 입력값입니다.`)
       return
     }
 
@@ -247,9 +245,10 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
         surveyMonth: sample.surveyMonth,
         templateId: selectedTemplate.id,
         surveyType: selectedTemplate.title,
-        answers,
-        appGps,
-        myGps660Coordinate,
+        status: requestedStatus,
+        answers: submission.answers,
+        appGps: submission.appGps,
+        myGps660Coordinate: submission.myGps660Coordinate,
         media,
       }),
     })
@@ -257,20 +256,47 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
     const result = (await response.json()) as {
       ok: boolean
       submissionId?: string
-      qaIssueCount?: number
       message?: string
+      hardErrors?: QaFinding[]
+      warnings?: QaFinding[]
     }
 
     setIsSubmitting(false)
+    setHardErrors(result.hardErrors ?? [])
+    setWarnings(result.warnings ?? validation.warnings)
     setMessage(
       response.ok && result.ok
-        ? `제출 완료: ${result.submissionId}. 보완 필요 항목 ${result.qaIssueCount ?? 0}건.`
+        ? requestedStatus === 'draft'
+          ? '임시저장 완료'
+          : `제출 완료: ${result.submissionId}`
         : result.message ?? '제출에 실패했습니다.',
     )
   }
 
   return (
-    <form className="form-grid" onSubmit={submit}>
+    <form className="form-grid" onSubmit={submit} noValidate>
+      {hardErrors.length > 0 ? (
+        <div className="card status qa_required">
+          <h3>제출할 수 없습니다. 아래 항목을 수정해 주세요.</h3>
+          <ul>
+            {hardErrors.map((item) => (
+              <li key={item.code}>{item.message}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {warnings.length > 0 ? (
+        <div className="card">
+          <h3>확인 필요</h3>
+          <ul>
+            {warnings.map((item) => (
+              <li key={item.code}>{item.message}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <label className="field">
         조사 유형 선택
         <select
@@ -314,6 +340,11 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
                   {field.required ? ' *' : ''}
                 </span>
                 {field.help ? <span className="muted">{field.help}</span> : null}
+                {field.id === 'field_trade_status' ? (
+                  <span className="muted">
+                    포전거래는 수확 전에 과원 또는 필지를 통째로 상인에게 넘기는 거래입니다. 농가가 직접 수확·출하하면 X를 선택하세요.
+                  </span>
+                ) : null}
                 {renderField(field)}
               </label>
             ))}
@@ -349,7 +380,7 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
 
       <div className="card">
         <h3>사진 업로드</h3>
-        <p className="muted">사진은 구글 드라이브에 저장되고, 파일 ID는 제출 기록과 연결됩니다.</p>
+        <p className="muted">사진은 Google Drive 업로드가 완료되어야 최종 제출할 수 있습니다.</p>
         <div className="grid">
           {REQUIRED_PHOTO_TYPES.map((photoType) => (
             <label className="field" key={photoType}>
@@ -366,10 +397,10 @@ export function SurveySubmissionForm({ sample, templates }: SurveySubmissionForm
       </div>
 
       <div className="nav">
-        <button className="button" type="button" onClick={() => setMessage('임시저장은 다음 단계에서 Sheets draft로 연결됩니다.')}>
+        <button className="button" type="submit" name="status" value="draft" disabled={isSubmitting}>
           임시저장
         </button>
-        <button className="button" type="submit" disabled={isSubmitting}>
+        <button className="button" type="submit" name="status" value="submitted" disabled={isSubmitting}>
           {isSubmitting ? '제출 중...' : '제출'}
         </button>
       </div>

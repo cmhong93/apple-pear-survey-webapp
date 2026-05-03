@@ -8,6 +8,9 @@ export interface SurveyAnswer {
   fieldLabel: string
   value: string | number | boolean | string[] | null
   required?: boolean
+  fieldType?: string
+  min?: number
+  max?: number
 }
 
 export interface SurveySubmission {
