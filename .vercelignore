@@ -1,0 +1,11 @@
+_handoff/
+_handoff/input/*.xlsx
+_handoff/*.xlsx
+_handoff/**/*.xlsx
+_handoff/output/*.csv
+.tmp-*
+*.local
+*service-account*.json
+*credentials*.json
+*oauth*.json
+*refresh-token*
