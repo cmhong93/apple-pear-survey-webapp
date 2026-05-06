@@ -15,6 +15,29 @@ const confirmedGrowthWorkbookPath = path.join(
   "farm-basic-sample-list.raw.xlsx"
 );
 const defaultSurveyMonth = "202606";
+const confirmedGrowthSampleIds = new Set([
+  "\uD6C4\uC9C0-281",
+  "\uD6C4\uC9C0-287",
+  "\uD6C4\uC9C0-292",
+  "\uD6C4\uC9C0-295",
+  "\uD6C4\uC9C0-303",
+  "\uD6C4\uC9C0-306",
+  "\uBC30-237",
+  "\uBC30-241",
+  "\uBC30-242",
+  "\uBC30-244",
+  "\uBC30-246",
+  "\uBC30-247",
+  "\uBC30-258",
+  "\uBC30-260",
+  "\uBC30-261",
+  "\uBC30-263",
+  "\uBC30-264",
+  "\uBC30-267",
+  "\uBC30-276",
+  "\uBC30-278",
+  "\uBC30-279",
+]);
 
 type ZipEntry = {
   name: string;
@@ -218,6 +241,7 @@ function rowToSampleMasterRecord(
     raw.assigned_team_id || raw.assigned_team || "",
     sampleId
   );
+  const growthTarget = normalizeGrowthTarget(raw, sampleId, new Set<string>());
 
   return {
     sampleId,
@@ -235,7 +259,7 @@ function rowToSampleMasterRecord(
     status: raw.status ?? "조사대기",
     surveyMonth: raw.survey_month ?? "",
     surveyCase: raw.survey_case ?? "",
-    growthTarget: raw.growth_target ?? "",
+    growthTarget,
     assignedTeam,
     pnu: raw.pnu ?? "",
     raw,
@@ -537,6 +561,8 @@ function normalizeGrowthTarget(
   sampleId: string,
   confirmedGrowthIds: Set<string>
 ) {
+  if (confirmedGrowthSampleIds.has(sampleId)) return "Y";
+
   if (confirmedGrowthIds.size > 0) {
     return confirmedGrowthIds.has(sampleId) ? "Y" : "N";
   }
