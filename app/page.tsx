@@ -633,14 +633,24 @@ export default function Home() {
         setSampleTotalCount(payload.totalCount);
         setSampleColumnCount(payload.columnCount);
 
+        const draftSampleAvailable = payload.samples.some(
+          (sample) => sample.sampleId === selectedSampleId
+        );
         const nextSample =
           payload.samples.find((sample) => sample.sampleId === selectedSampleId) ??
           payload.samples[0];
 
         if (nextSample) {
           setSelectedSampleId(nextSample.sampleId);
-          if (!hasDraft) {
+          if (!hasDraft || !draftSampleAvailable) {
             setFormData(createSampleFormData(nextSample));
+            setRepeatData({});
+            setPhotoStates(createInitialPhotoStates());
+            setSubmissionResult(undefined);
+            setPdfExportResult(undefined);
+            setErrors((prev) =>
+              prev.filter((error) => !error.includes("sample access denied"))
+            );
           }
         }
 

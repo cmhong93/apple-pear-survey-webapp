@@ -271,27 +271,14 @@ function getPhotoSubmitErrors(payload: SurveySubmissionPayload) {
   activePhotos
     .filter((photo) => photo.required)
     .forEach((photo) => {
-      const status = payload.photoStates[photo.id]?.status ?? "미촬영";
-      if (status === "촬영 완료") return;
+      const status = payload.photoStates[photo.id]?.status ?? "\uBBF8\uCD2C\uC601";
+      if (status === "\uCD2C\uC601 \uC644\uB8CC") return;
 
-      if (photo.blocksSubmission) {
-        errors.push(getPhotoMissingMessage(photo));
-        return;
-      }
-
-      if (photo.id === "photo_bank_request_signed") {
-        errors.push(
-          "계좌입금의뢰서 서명본은 발주처 제출 필수 항목입니다. 전체 문서가 보이도록 촬영해 업로드해 주세요."
-        );
-        return;
-      }
-
-      errors.push(`${photo.label}은 필수 촬영 항목입니다.`);
+      errors.push(getPhotoMissingMessage(photo));
     });
 
   return errors;
 }
-
 function getPhotosForSurveyType(surveyType: string) {
   return surveyType.includes("_")
     ? getPhotoRequirementsForRoundKey(surveyType)
@@ -314,7 +301,7 @@ function createPhotoManifestRows({
 
   return photos.map((photo) => {
     const photoState = payload.photoStates[photo.id];
-    const uploaded = photoState?.status === "촬영 완료";
+    const uploaded = photoState?.status === "\uCD2C\uC601 \uC644\uB8CC";
     const shortLabel = photo.shortLabel ?? photo.label;
     const filename = uploaded
       ? `${payload.common.survey_month}_${payload.common.sample_id}_${surveyLabel}_${shortLabel}_01.jpg`
@@ -358,7 +345,7 @@ function createStagePhotoManifestRows({
 
   return photos.map((photo) => {
     const photoState = payload.photoStates[photo.id];
-    const uploaded = photoState?.status === "촬영 완료";
+    const uploaded = photoState?.status === "\uCD2C\uC601 \uC644\uB8CC";
     const filename = uploaded
       ? createRequirementPhotoFilename({
           surveyMonth: payload.common.survey_month,
@@ -539,7 +526,7 @@ function stringifyValue(value: unknown) {
 
 function countCompletedPhotos(payload: SurveySubmissionPayload) {
   return getPhotosForSurveyType(payload.common.survey_round_key || payload.activeTab).filter(
-    (photo) => payload.photoStates[photo.id]?.status === "촬영 완료"
+    (photo) => payload.photoStates[photo.id]?.status === "\uCD2C\uC601 \uC644\uB8CC"
   ).length;
 }
 

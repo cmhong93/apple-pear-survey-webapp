@@ -32,19 +32,26 @@ type WorkbookData = {
 };
 
 let cachedWorkbook: WorkbookData | undefined;
+let cachedWorkbookAt = 0;
+const workbookCacheTtlMs = 30_000;
 
 export async function readFarmBasicSampleWorkbook(): Promise<WorkbookData> {
-  if (cachedWorkbook) return cachedWorkbook;
+  const now = Date.now();
+  if (cachedWorkbook && now - cachedWorkbookAt < workbookCacheTtlMs) {
+    return cachedWorkbook;
+  }
 
   const sheetWorkbook = await readGoogleSampleMasterWorkbook().catch(
     () => undefined
   );
   if (sheetWorkbook?.samples.length) {
     cachedWorkbook = sheetWorkbook;
+    cachedWorkbookAt = now;
     return cachedWorkbook;
   }
 
   cachedWorkbook = await readLocalSampleMasterWorkbook();
+  cachedWorkbookAt = now;
   return cachedWorkbook;
 }
 
@@ -158,6 +165,9 @@ export const sampleMasterHeaders = [
   "survey_case",
   "growth_target",
   "assigned_team",
+  "assigned_team_id",
+  "assignment_status",
+  "assignment_note",
   "pnu",
   "status",
   "source_row",
@@ -182,6 +192,9 @@ export function sampleToMasterRow(sample: SampleMasterRecord) {
     sample.surveyCase,
     sample.growthTarget,
     sample.assignedTeam,
+    sample.assignedTeam,
+    sample.raw.assignment_status || "",
+    sample.raw.assignment_note || "",
     sample.pnu,
     sample.status,
     sample.raw._source_row || "",
@@ -219,7 +232,7 @@ function rowToSampleMasterRecord(
     surveyMonth: raw.survey_month ?? "",
     surveyCase: raw.survey_case ?? "",
     growthTarget: raw.growth_target ?? "",
-    assignedTeam: raw.assigned_team ?? "",
+    assignedTeam: raw.assigned_team_id || raw.assigned_team || "",
     pnu: raw.pnu ?? "",
     raw,
   };
@@ -235,9 +248,14 @@ export function filterSamplesByAccess({
   if (user.role === "admin") return samples;
 
   const hasSurveyorAssignment = samples.some(
-    (sample) => sample.surveyorId || sample.surveyorName
+    (sample) => sample.surveyorId || sample.surveyorName || sample.assignedTeam
   );
-  if (!hasSurveyorAssignment) return samples;
+  if (!hasSurveyorAssignment) return [];
+
+  const teamId = getTeamIdForSurveyor(user.surveyorId);
+  if (teamId) {
+    return samples.filter((sample) => sample.assignedTeam === teamId);
+  }
 
   if (user.surveyorId === "TEST") {
     return samples.filter(
@@ -258,6 +276,9 @@ export function filterSamplesByAccess({
 export function canAccessSample(sample: SampleMasterRecord, user: AuthUser) {
   if (user.role === "admin") return true;
 
+  const teamId = getTeamIdForSurveyor(user.surveyorId);
+  if (teamId) return sample.assignedTeam === teamId;
+
   if (user.surveyorId === "TEST") {
     return (
       sample.surveyorId === "TEST" ||
@@ -270,6 +291,14 @@ export function canAccessSample(sample: SampleMasterRecord, user: AuthUser) {
     sample.surveyorId === user.surveyorId ||
     sample.surveyorName === user.surveyorId
   );
+}
+
+function getTeamIdForSurveyor(surveyorId: string) {
+  if (["S01", "S02"].includes(surveyorId)) return "T01";
+  if (["S03", "S04"].includes(surveyorId)) return "T02";
+  if (["S05", "S06"].includes(surveyorId)) return "T03";
+  if (["S07", "S08"].includes(surveyorId)) return "T04";
+  return "";
 }
 
 function readZipFiles(buffer: Buffer) {
@@ -465,7 +494,7 @@ function rowToSample(
       defaultSurveyMonth,
     surveyCase: createSurveyCase(growthTarget),
     growthTarget,
-    assignedTeam: raw.assigned_team || "",
+    assignedTeam: raw.assigned_team_id || raw.assigned_team || "",
     pnu: raw["팜맵 PNU"] || "",
     raw,
   };

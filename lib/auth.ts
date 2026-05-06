@@ -36,6 +36,42 @@ const loginUsers: Record<string, LoginUser> = {
     role: "surveyor",
     surveyorId: "S02",
   },
+  S03: {
+    userId: "S03",
+    password: "S03",
+    role: "surveyor",
+    surveyorId: "S03",
+  },
+  S04: {
+    userId: "S04",
+    password: "S04",
+    role: "surveyor",
+    surveyorId: "S04",
+  },
+  S05: {
+    userId: "S05",
+    password: "S05",
+    role: "surveyor",
+    surveyorId: "S05",
+  },
+  S06: {
+    userId: "S06",
+    password: "S06",
+    role: "surveyor",
+    surveyorId: "S06",
+  },
+  S07: {
+    userId: "S07",
+    password: "S07",
+    role: "surveyor",
+    surveyorId: "S07",
+  },
+  S08: {
+    userId: "S08",
+    password: "S08",
+    role: "surveyor",
+    surveyorId: "S08",
+  },
   TEST: {
     userId: "TEST",
     password: "TEST",
