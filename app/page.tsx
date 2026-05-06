@@ -260,13 +260,17 @@ const formatSurveyMonth = (date: Date) =>
   `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}`;
 
 const monthDayFieldIds = new Set([
+  "bloom_start_previous_date",
   "bloom_start_normal_date",
+  "full_bloom_previous_date",
   "full_bloom_normal_date",
 ]);
 
 const normalizeMonthDay = (value: string) => {
   const trimmedValue = value.trim();
-  const match = trimmedValue.match(/^(\d{1,2})[-/](\d{1,2})$/);
+  const match =
+    trimmedValue.match(/^(\d{1,2})[-/](\d{1,2})$/) ??
+    trimmedValue.match(/^(\d{2})(\d{2})$/);
   if (!match) return value;
 
   const month = Number(match[1]);

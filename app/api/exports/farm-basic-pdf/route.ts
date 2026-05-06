@@ -54,18 +54,11 @@ export async function POST(request: Request) {
     const sampleId = body?.sample_id?.trim() ?? "";
     const submissionId = body?.submission_id?.trim() ?? "";
 
-    if (!sampleId || !submissionId) {
+    if (!submissionId) {
       return Response.json(
-        { error: "sample_id and submission_id are required." },
+        { error: "submission_id is required." },
         { status: 400 }
       );
-    }
-
-    const workbook = await readFarmBasicSampleWorkbook();
-    const sample = workbook.samples.find((item) => item.sampleId === sampleId);
-    if (!sample) return Response.json({ error: "sample not found." }, { status: 404 });
-    if (!canAccessSample(sample, user)) {
-      return Response.json({ error: "sample access denied." }, { status: 403 });
     }
 
     const sheetsConfig = getGoogleSheetsConfig();
@@ -86,20 +79,29 @@ export async function POST(request: Request) {
       return Response.json({ error: "submission not found." }, { status: 404 });
     }
 
+    const workbook = await readFarmBasicSampleWorkbook();
+    const sample = workbook.samples.find(
+      (item) => item.sampleId === submission.sampleId
+    );
+    if (!sample) return Response.json({ error: "sample not found." }, { status: 404 });
+    if (!canAccessSample(sample, user)) {
+      return Response.json({ error: "sample access denied." }, { status: 403 });
+    }
+
     const answers = await readAnswers({
       spreadsheetId: sheetsConfig.spreadsheetId,
       submissionId,
     });
     const surveyMonth = submission.surveyMonth || "202606";
-    const surveyLabel = "농가기본";
+    const surveyLabel = submission.surveyLabel || "농가기본";
     const filename = sanitizeFilename(
-      `${surveyMonth}_${sampleId}_${surveyLabel}_조사표.pdf`
+      `${surveyMonth}_${submission.sampleId}_${surveyLabel}_조사표.pdf`
     );
     const values = createPdfValues({ submission, answers });
     const pdfBytes = await createFarmBasicPdf(values);
     const folderId = await ensureDriveFolderPath({
       rootFolderId: driveConfig.rootFolderId,
-      segments: [surveyMonth, sampleId, surveyLabel],
+      segments: [surveyMonth, submission.sampleId, surveyLabel],
     });
     const driveFile = await uploadPdfToDrive({
       folderId,
@@ -116,7 +118,7 @@ export async function POST(request: Request) {
       rows: [
         [
           exportId,
-          sampleId,
+          submission.sampleId,
           surveyMonth,
           submission.surveyType,
           surveyLabel,
@@ -157,29 +159,39 @@ async function findSubmission({
 }) {
   const rows = await readSheetValues({
     spreadsheetId,
-    range: "'survey_submissions'!A:T",
+    range: "'survey_submissions'!A:Z",
   });
-  const row = rows
-    .slice(1)
-    .find((item) => item[0] === submissionId && item[3] === sampleId);
+  const headers = rows[0] ?? [];
+  const submittedRows = rows.slice(1);
+  const row =
+    submittedRows.find((item) => {
+      const rowSubmissionId = getCell(item, headers, "submission_id", 0);
+      const rowSampleId = getCell(item, headers, "sample_id", 5);
+      return rowSubmissionId === submissionId && sampleId && rowSampleId === sampleId;
+    }) ??
+    submittedRows.find((item) => {
+      const rowSubmissionId = getCell(item, headers, "submission_id", 0);
+      return rowSubmissionId === submissionId;
+    });
   if (!row) return undefined;
 
   return {
-    submissionId: row[0] ?? "",
-    submittedAt: row[1] ?? "",
-    surveyType: row[2] ?? "",
-    sampleId: row[3] ?? "",
-    surveyMonth: row[4] ?? "",
-    surveyorId: row[5] ?? "",
-    farmerName: row[6] ?? "",
-    phone: row[7] ?? "",
-    cropType: row[8] ?? "",
-    varietyGroup: row[9] ?? "",
-    detailVariety: row[10] ?? "",
-    sido: row[11] ?? "",
-    sigungu: row[12] ?? "",
-    homeAddress: row[13] ?? "",
-    fieldAddress: row[14] ?? "",
+    submissionId: getCell(row, headers, "submission_id", 0),
+    submittedAt: getCell(row, headers, "submitted_at", 1),
+    surveyType: getCell(row, headers, "survey_type", 2),
+    surveyLabel: getCell(row, headers, "survey_label", 4),
+    sampleId: getCell(row, headers, "sample_id", 5),
+    surveyMonth: getCell(row, headers, "survey_month", 6),
+    surveyorId: getCell(row, headers, "surveyor_id", 9),
+    farmerName: getCell(row, headers, "farmer_name", 10),
+    phone: getCell(row, headers, "phone", 11),
+    cropType: getCell(row, headers, "crop_type", 12),
+    varietyGroup: getCell(row, headers, "variety_group", 13),
+    detailVariety: getCell(row, headers, "detail_variety", 14),
+    sido: getCell(row, headers, "sido", 15),
+    sigungu: getCell(row, headers, "sigungu", 16),
+    homeAddress: getCell(row, headers, "home_address", 17),
+    fieldAddress: getCell(row, headers, "field_address", 18),
   };
 }
 
@@ -256,6 +268,16 @@ function createPdfValues({
     expected_harvest_dates: answers.expected_harvest_dates,
     farm_basic_notes: answers.farm_basic_notes,
   };
+}
+
+function getCell(
+  row: string[],
+  headers: string[],
+  header: string,
+  fallbackIndex: number
+) {
+  const index = headers.indexOf(header);
+  return row[index >= 0 ? index : fallbackIndex] ?? "";
 }
 
 function sanitizeFilename(value: string) {

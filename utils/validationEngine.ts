@@ -11,14 +11,13 @@ import type {
 export type ValidationMode = "save" | "submit";
 
 const monthDayFieldIds = new Set([
+  "bloom_start_previous_date",
   "bloom_start_normal_date",
+  "full_bloom_previous_date",
   "full_bloom_normal_date",
 ]);
 
-const previousYearDateFieldIds = new Set([
-  "bloom_start_previous_date",
-  "full_bloom_previous_date",
-]);
+const previousYearDateFieldIds = new Set<string>();
 
 const distanceFieldIds = new Set(["row_spacing_m", "tree_spacing_m"]);
 
@@ -179,7 +178,9 @@ function validateRuleValue({
       if (
         trimmedValue &&
         rule.allowedOptions.length > 0 &&
-        !rule.allowedOptions.includes(trimmedValue)
+        !rule.allowedOptions
+          .map(normalizeAllowedOption)
+          .includes(normalizeAllowedOption(trimmedValue))
       ) {
         issues.push(issue);
       }
@@ -379,7 +380,12 @@ function validateFriendlyFieldRules({
 }
 
 function isValidMonthDay(value: string) {
-  const match = value.match(/^(\d{1,2})[-/](\d{1,2})$/);
+  const normalized = value.match(/^\d{4}-(\d{2})-(\d{2})$/)
+    ? value.slice(5)
+    : value;
+  const match =
+    normalized.match(/^(\d{1,2})[-/](\d{1,2})$/) ??
+    normalized.match(/^(\d{2})(\d{2})$/);
   if (!match) return false;
 
   const month = Number(match[1]);
@@ -392,6 +398,10 @@ function isValidMonthDay(value: string) {
 }
 
 function isDateInYear(value: string, year: number) {
+  if (/^(\d{1,2})[-/](\d{1,2})$/.test(value)) {
+    return isValidMonthDay(value);
+  }
+
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return false;
 
@@ -406,6 +416,12 @@ function isDateInYear(value: string, year: number) {
     testDate.getMonth() === inputMonth - 1 &&
     testDate.getDate() === day
   );
+}
+
+function normalizeAllowedOption(value: string) {
+  const compact = value.trim().replace(/[\s_-]/g, "").toLowerCase();
+  if (compact === "mygps660") return "mygps660";
+  return compact;
 }
 
 function validateFarmBasicOpenQuestions({

@@ -24,20 +24,14 @@ export default function SurveyField({
     field.readOnly || field.note
       ? ""
       : "표본리스트에서 불러온 값이며 필요 시 수정할 수 있습니다.";
-  const previousYearDateFieldIds = new Set([
-    "bloom_start_previous_date",
-    "full_bloom_previous_date",
-  ]);
   const monthDayFieldIds = new Set([
+    "bloom_start_previous_date",
     "bloom_start_normal_date",
+    "full_bloom_previous_date",
     "full_bloom_normal_date",
   ]);
-  const isPreviousYearDateField = previousYearDateFieldIds.has(field.fieldId);
   const isMonthDayField = monthDayFieldIds.has(field.fieldId);
-  const inputValue =
-    field.inputType === "date" && isPreviousYearDateField
-      ? toPreviousYearDateValue(value)
-      : value;
+  const inputValue = value;
 
   return (
     <label className="block rounded border bg-gray-50 p-4">
@@ -84,9 +78,6 @@ export default function SurveyField({
           placeholder={isMonthDayField ? "MM-DD" : field.label}
           inputMode={isMonthDayField ? "numeric" : undefined}
           onFocus={() => onFocus?.(field)}
-          onClick={() => {
-            if (isPreviousYearDateField && !value) onChange("2025-05-01");
-          }}
           onChange={(event) => onChange(event.target.value)}
         />
       )}
@@ -101,28 +92,4 @@ export default function SurveyField({
       )}
     </label>
   );
-}
-
-function toPreviousYearDateValue(value: string) {
-  const trimmedValue = value.trim();
-  if (/^2025-\d{2}-\d{2}$/.test(trimmedValue)) return trimmedValue;
-
-  const monthDayMatch = trimmedValue.match(/^(\d{1,2})[-/](\d{1,2})$/);
-  if (!monthDayMatch) return trimmedValue;
-
-  const month = Number(monthDayMatch[1]);
-  const day = Number(monthDayMatch[2]);
-  const testDate = new Date(2025, month - 1, day);
-  if (
-    month < 1 ||
-    month > 12 ||
-    day < 1 ||
-    day > 31 ||
-    testDate.getMonth() !== month - 1 ||
-    testDate.getDate() !== day
-  ) {
-    return trimmedValue;
-  }
-
-  return `2025-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
