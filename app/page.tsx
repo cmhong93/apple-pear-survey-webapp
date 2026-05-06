@@ -586,6 +586,9 @@ export default function Home() {
             restored[photo.id] = {
               status: saved.status,
               fileName: saved.fileName,
+              driveFileId: saved.driveFileId,
+              aiStatus: saved.aiStatus,
+              aiMessage: saved.aiMessage,
             };
           }
         });
@@ -940,6 +943,7 @@ export default function Home() {
       });
       const result = (await response.json().catch(() => ({}))) as {
         filename?: string;
+        drive_file_id?: string;
         error?: string;
       };
 
@@ -953,6 +957,7 @@ export default function Home() {
           status: "촬영 완료",
           fileName: result.filename || file.name,
           previewUrl,
+          driveFileId: result.drive_file_id,
         },
       }));
       setErrors((prev) => prev.filter((error) => !error.includes("사진 업로드")));
@@ -1060,6 +1065,9 @@ export default function Home() {
       storedPhotoStates[photo.id] = {
         status: photoStates[photo.id]?.status ?? "미촬영",
         fileName: photoStates[photo.id]?.fileName,
+        driveFileId: photoStates[photo.id]?.driveFileId,
+        aiStatus: photoStates[photo.id]?.aiStatus,
+        aiMessage: photoStates[photo.id]?.aiMessage,
       };
     });
 

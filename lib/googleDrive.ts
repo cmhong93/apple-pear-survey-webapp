@@ -172,6 +172,27 @@ export async function uploadFileToDrive({
   };
 }
 
+export async function downloadDriveFile(fileId: string) {
+  const accessToken = await getDriveAccessToken();
+  const response = await fetch(
+    `${driveBaseUrl}/files/${encodeURIComponent(
+      fileId
+    )}?alt=media&supportsAllDrives=true`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Google Drive file download failed with ${response.status}.`);
+  }
+
+  return {
+    data: new Uint8Array(await response.arrayBuffer()),
+    mimeType: response.headers.get("content-type") || "image/jpeg",
+  };
+}
+
 async function findFolder({ parentId, name }: { parentId: string; name: string }) {
   const accessToken = await getDriveAccessToken();
   const query = [

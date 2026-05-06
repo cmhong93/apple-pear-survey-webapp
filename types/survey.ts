@@ -176,6 +176,9 @@ export type PhotoState = {
   status: PhotoStatus;
   fileName?: string;
   previewUrl?: string;
+  driveFileId?: string;
+  aiStatus?: "pending" | "normal" | "warning" | "retake_recommended" | "admin_review" | "ai_excluded" | "error";
+  aiMessage?: string;
 };
 
 export type FormDataState = Record<string, Record<string, string>>;
