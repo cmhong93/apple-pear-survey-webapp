@@ -14,7 +14,7 @@ const confirmedGrowthWorkbookPath = path.join(
   "_handoff",
   "farm-basic-sample-list.raw.xlsx"
 );
-const defaultSurveyMonth = "202605";
+const defaultSurveyMonth = "202606";
 
 type ZipEntry = {
   name: string;
@@ -214,6 +214,10 @@ function rowToSampleMasterRecord(
   const crop = raw.crop_type ?? "";
   const variety = raw.variety_group ?? "";
   const administrativeRegion = [raw.sido, raw.sigungu].filter(Boolean).join(" ");
+  const assignedTeam = normalizeAssignedTeam(
+    raw.assigned_team_id || raw.assigned_team || "",
+    sampleId
+  );
 
   return {
     sampleId,
@@ -232,7 +236,7 @@ function rowToSampleMasterRecord(
     surveyMonth: raw.survey_month ?? "",
     surveyCase: raw.survey_case ?? "",
     growthTarget: raw.growth_target ?? "",
-    assignedTeam: raw.assigned_team_id || raw.assigned_team || "",
+    assignedTeam,
     pnu: raw.pnu ?? "",
     raw,
   };
@@ -474,6 +478,11 @@ function rowToSample(
     .filter(Boolean)
     .join(" ");
 
+  const assignedTeam = normalizeAssignedTeam(
+    raw.assigned_team_id || raw.assigned_team || "",
+    sourceId
+  );
+
   return {
     sampleId: sourceId,
     farmerName: raw["이름"] || raw.farmer_name || "",
@@ -494,7 +503,7 @@ function rowToSample(
       defaultSurveyMonth,
     surveyCase: createSurveyCase(growthTarget),
     growthTarget,
-    assignedTeam: raw.assigned_team_id || raw.assigned_team || "",
+    assignedTeam,
     pnu: raw["팜맵 PNU"] || "",
     raw,
   };
@@ -548,6 +557,49 @@ function parseExplicitGrowthFlag(value: string) {
     return "Y";
   }
   return "N";
+}
+
+function normalizeAssignedTeam(value: string, sampleId: string) {
+  const explicitTeam = String(value ?? "").trim().toUpperCase();
+  if (["T01", "T02", "T03", "T04"].includes(explicitTeam)) {
+    return explicitTeam;
+  }
+
+  return inferAssignedTeamFromSampleId(sampleId);
+}
+
+function inferAssignedTeamFromSampleId(sampleId: string) {
+  const match = String(sampleId ?? "")
+    .trim()
+    .match(/^(.+?)-(\d+)$/);
+  if (!match) return "";
+
+  const prefix = match[1];
+  const number = Number(match[2]);
+  if (!Number.isFinite(number)) return "";
+
+  if (
+    (prefix === "홍로" && number >= 173 && number <= 184) ||
+    (prefix === "후지" && number >= 281 && number <= 306)
+  ) {
+    return "T01";
+  }
+
+  if (prefix !== "배") return "";
+
+  if ((number >= 228 && number <= 235) || (number >= 258 && number <= 279)) {
+    return "T03";
+  }
+
+  if ((number >= 236 && number <= 247) || (number >= 250 && number <= 257)) {
+    return "T02";
+  }
+
+  if (number >= 248 && number <= 249) {
+    return "T01";
+  }
+
+  return "";
 }
 
 function createSurveyCase(growthTarget: string) {
