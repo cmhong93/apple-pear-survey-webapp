@@ -12,6 +12,11 @@ export type SheetAppendInput = {
   rows: unknown[][];
 };
 
+export type SheetValueUpdate = {
+  range: string;
+  values: unknown[][];
+};
+
 let cachedAccessToken:
   | {
       token: string;
@@ -161,6 +166,132 @@ export async function readSheetValues({
   return payload.values ?? [];
 }
 
+export async function getSpreadsheetMetadata(spreadsheetId: string) {
+  const accessToken = await getGoogleSheetsAccessToken();
+  const response = await fetch(`${sheetsBaseUrl}/${spreadsheetId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Sheets metadata request failed with ${response.status}.`);
+  }
+
+  return (await response.json()) as {
+    sheets?: Array<{
+      properties?: {
+        sheetId?: number;
+        title?: string;
+      };
+    }>;
+  };
+}
+
+export async function batchUpdateSpreadsheet({
+  spreadsheetId,
+  requests,
+}: {
+  spreadsheetId: string;
+  requests: unknown[];
+}) {
+  if (requests.length === 0) return {};
+  const accessToken = await getGoogleSheetsAccessToken();
+  const response = await fetch(`${sheetsBaseUrl}/${spreadsheetId}:batchUpdate`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ requests }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Sheets batch update failed with ${response.status}.`);
+  }
+
+  return (await response.json()) as {
+    replies?: Array<{
+      duplicateSheet?: {
+        properties?: {
+          sheetId?: number;
+          title?: string;
+        };
+      };
+    }>;
+  };
+}
+
+export async function batchUpdateSheetValues({
+  spreadsheetId,
+  updates,
+}: {
+  spreadsheetId: string;
+  updates: SheetValueUpdate[];
+}) {
+  if (updates.length === 0) return;
+  const accessToken = await getGoogleSheetsAccessToken();
+  const response = await fetch(
+    `${sheetsBaseUrl}/${spreadsheetId}/values:batchUpdate`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        valueInputOption: "USER_ENTERED",
+        data: updates,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Google Sheets values batch update failed with ${response.status}.`);
+  }
+}
+
+export async function exportSheetToPdf({
+  spreadsheetId,
+  sheetId,
+}: {
+  spreadsheetId: string;
+  sheetId: number;
+}) {
+  const accessToken = await getGoogleSheetsAccessToken();
+  const url = new URL(
+    `https://docs.google.com/spreadsheets/d/${encodeURIComponent(
+      spreadsheetId
+    )}/export`
+  );
+  url.searchParams.set("format", "pdf");
+  url.searchParams.set("gid", String(sheetId));
+  url.searchParams.set("size", "A4");
+  url.searchParams.set("portrait", "true");
+  url.searchParams.set("fitw", "true");
+  url.searchParams.set("sheetnames", "false");
+  url.searchParams.set("printtitle", "false");
+  url.searchParams.set("pagenumbers", "false");
+  url.searchParams.set("gridlines", "false");
+  url.searchParams.set("fzr", "false");
+  url.searchParams.set("top_margin", "0.25");
+  url.searchParams.set("bottom_margin", "0.25");
+  url.searchParams.set("left_margin", "0.25");
+  url.searchParams.set("right_margin", "0.25");
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Sheets PDF export failed with ${response.status}.`);
+  }
+
+  return new Uint8Array(await response.arrayBuffer());
+}
+
 async function ensureSheetWithHeaders({
   spreadsheetId,
   sheetName,
@@ -249,7 +380,7 @@ async function ensureSheetWithHeaders({
   }
 }
 
-async function getAccessToken() {
+export async function getGoogleSheetsAccessToken() {
   const now = Math.floor(Date.now() / 1000);
   if (cachedAccessToken && cachedAccessToken.expiresAt - 60 > now) {
     return cachedAccessToken.token;
@@ -292,6 +423,10 @@ async function getAccessToken() {
   };
 
   return cachedAccessToken.token;
+}
+
+async function getAccessToken() {
+  return getGoogleSheetsAccessToken();
 }
 
 function createJwt({

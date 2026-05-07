@@ -14,7 +14,11 @@ import {
   getGoogleDriveConfig,
   uploadPdfToDrive,
 } from "@/lib/googleDrive";
-import { createFarmBasicPdf } from "@/lib/farmBasicPdfExport";
+import {
+  createFarmBasicPdfFromSheetTemplate,
+  deleteGeneratedPrintSheet,
+  getFarmBasicPrintTemplateConfig,
+} from "@/lib/farmBasicSheetPrintExport";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,56 +97,72 @@ export async function POST(request: Request) {
       submissionId,
     });
     const surveyMonth = submission.surveyMonth || "202606";
-    const surveyLabel = submission.surveyLabel || "농가기본";
+    const surveyLabel = submission.surveyLabel || "\uB18D\uAC00\uAE30\uBCF8";
     const filename = sanitizeFilename(
-      `${surveyMonth}_${submission.sampleId}_${surveyLabel}_조사표.pdf`
+      `${surveyMonth}_${submission.sampleId}_${surveyLabel}_\uC870\uC0AC\uD45C.pdf`
     );
     const values = createPdfValues({ submission, answers });
-    const pdfBytes = await createFarmBasicPdf(values);
-    const folderId = await ensureDriveFolderPath({
-      rootFolderId: driveConfig.rootFolderId,
-      segments: [surveyMonth, submission.sampleId, surveyLabel],
+    const printConfig = getFarmBasicPrintTemplateConfig(
+      sheetsConfig.spreadsheetId
+    );
+    const printResult = await createFarmBasicPdfFromSheetTemplate({
+      spreadsheetId: printConfig.spreadsheetId,
+      templateSheetName: printConfig.templateSheetName,
+      values,
     });
-    const driveFile = await uploadPdfToDrive({
-      folderId,
-      filename,
-      data: pdfBytes,
-    });
-    const generatedAt = new Date().toISOString();
-    const exportId = `export_${Date.now()}_${randomUUID().slice(0, 8)}`;
+    try {
+      const folderId = await ensureDriveFolderPath({
+        rootFolderId: driveConfig.rootFolderId,
+        segments: [surveyMonth, submission.sampleId, surveyLabel],
+      });
+      const driveFile = await uploadPdfToDrive({
+        folderId,
+        filename,
+        data: printResult.pdfBytes,
+      });
+      const generatedAt = new Date().toISOString();
+      const exportId = `export_${Date.now()}_${randomUUID().slice(0, 8)}`;
 
-    await appendRowsToSheet({
-      spreadsheetId: sheetsConfig.spreadsheetId,
-      sheetName: "export_manifest",
-      headers: exportManifestHeaders,
-      rows: [
-        [
-          exportId,
-          submission.sampleId,
-          surveyMonth,
-          submission.surveyType,
-          surveyLabel,
-          "pdf",
-          driveFile.id,
-          driveFile.webViewLink ?? "",
-          folderId,
-          filename,
-          generatedAt,
-          user.userId,
-          submissionId,
-          "v1",
-          "generated",
-          "official farm basic template",
+      await appendRowsToSheet({
+        spreadsheetId: sheetsConfig.spreadsheetId,
+        sheetName: "export_manifest",
+        headers: exportManifestHeaders,
+        rows: [
+          [
+            exportId,
+            submission.sampleId,
+            surveyMonth,
+            submission.surveyType,
+            surveyLabel,
+            "pdf",
+            driveFile.id,
+            driveFile.webViewLink ?? "",
+            folderId,
+            filename,
+            generatedAt,
+            user.userId,
+            submissionId,
+            "v1",
+            "generated",
+            `google sheets print template: ${printResult.generatedSheetName}`,
+          ],
         ],
-      ],
-    });
+      });
 
-    return Response.json({
-      filename,
-      drive_file_id: driveFile.id,
-      drive_url: driveFile.webViewLink ?? "",
-      status: "generated",
-    });
+      return Response.json({
+        filename,
+        drive_file_id: driveFile.id,
+        drive_url: driveFile.webViewLink ?? "",
+        status: "generated",
+      });
+    } finally {
+      if (!printConfig.keepGeneratedSheet) {
+        await deleteGeneratedPrintSheet({
+          spreadsheetId: printConfig.spreadsheetId,
+          sheetId: printResult.generatedSheetId,
+        }).catch(() => undefined);
+      }
+    }
   } catch {
     return Response.json({ error: "PDF export failed." }, { status: 500 });
   }
