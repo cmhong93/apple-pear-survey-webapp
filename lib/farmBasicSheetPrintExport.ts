@@ -18,12 +18,12 @@ type CellMapping = {
 const defaultTemplateSheetName = "print_template_farm_basic";
 
 const valueMappings: CellMapping[] = [
-  { fieldId: "survey_datetime", cell: "E2" },
+  { fieldId: "survey_datetime", cell: "A2", transform: surveyDateLine },
   { fieldId: "farm_id", cell: "C6" },
   { fieldId: "farmer_name", cell: "F6" },
   { fieldId: "farmer_contact", cell: "I6" },
   { fieldId: "home_address", cell: "C7" },
-  { fieldId: "variety", cell: "I7", transform: (_, values) => joinValues([values.variety, values.detailed_variety], " / ") },
+  { fieldId: "variety", cell: "I7", transform: (_, values) => joinUniqueValues([values.variety, values.detailed_variety], " / ") },
   { fieldId: "plot_address", cell: "C8" },
   { fieldId: "altitude_m", cell: "I8" },
   { fieldId: "plot_area_pyeong", cell: "C9" },
@@ -37,22 +37,22 @@ const valueMappings: CellMapping[] = [
   { fieldId: "bloom_start_current_date", cell: "C14", transform: monthDay },
   { fieldId: "bloom_start_previous_date", cell: "C15", transform: monthDay },
   { fieldId: "bloom_start_normal_date", cell: "C16", transform: monthDay },
-  { fieldId: "full_bloom_current_date", cell: "C18", transform: monthDay },
-  { fieldId: "full_bloom_previous_date", cell: "C19", transform: monthDay },
-  { fieldId: "full_bloom_normal_date", cell: "C20", transform: monthDay },
+  { fieldId: "full_bloom_current_date", cell: "C17", transform: monthDay },
+  { fieldId: "full_bloom_previous_date", cell: "C18", transform: monthDay },
+  { fieldId: "full_bloom_normal_date", cell: "C19", transform: monthDay },
   { fieldId: "flowering_amount_vs_previous", cell: "I14" },
   { fieldId: "flowering_amount_vs_normal", cell: "I15" },
-  { fieldId: "full_bloom_amount_vs_previous", cell: "C22" },
-  { fieldId: "full_bloom_amount_vs_normal", cell: "C23" },
-  { fieldId: "fruit_set_target_count_current", cell: "I17" },
-  { fieldId: "fruit_set_count_previous_year", cell: "I18" },
-  { fieldId: "fruit_set_count_normal_year", cell: "I19" },
-  { fieldId: "cold_damage_2026_rate", cell: "I21" },
-  { fieldId: "cold_damage_2026_no_fruit_set_rate", cell: "J21" },
-  { fieldId: "cold_damage_2026_quality_decline_rate", cell: "K21" },
-  { fieldId: "cold_damage_2025_rate", cell: "I22" },
-  { fieldId: "cold_damage_2025_no_fruit_set_rate", cell: "J22" },
-  { fieldId: "cold_damage_2025_quality_decline_rate", cell: "K22" },
+  { fieldId: "full_bloom_amount_vs_previous", cell: "C20" },
+  { fieldId: "full_bloom_amount_vs_normal", cell: "C21" },
+  { fieldId: "fruit_set_target_count_current", cell: "I16" },
+  { fieldId: "fruit_set_count_previous_year", cell: "I17" },
+  { fieldId: "fruit_set_count_normal_year", cell: "I18" },
+  { fieldId: "cold_damage_2026_rate", cell: "I22" },
+  { fieldId: "cold_damage_2026_no_fruit_set_rate", cell: "J22" },
+  { fieldId: "cold_damage_2026_quality_decline_rate", cell: "K22" },
+  { fieldId: "cold_damage_2025_rate", cell: "I23" },
+  { fieldId: "cold_damage_2025_no_fruit_set_rate", cell: "J23" },
+  { fieldId: "cold_damage_2025_quality_decline_rate", cell: "K23" },
   { fieldId: "fruit_thinning_1_date", cell: "C25", transform: monthDay },
   { fieldId: "fruit_thinning_2_date", cell: "C26", transform: monthDay },
   { fieldId: "expected_harvest_1_date", cell: "I25", transform: monthDay },
@@ -368,53 +368,51 @@ function createTemplateFormatRequests(sheetId: number) {
   requests.push(
     ...setCells(sheetId, [
       [1, 1, "\uC0AC\uACFC\u00B7\uBC30 \uC2E4\uCE21 \uC870\uC0AC \uB18D\uAC00 \uAE30\uBCF8 \uC815\uBCF4 \uC870\uC0AC[\uC0DD\uC721 \uB18D\uAC00]"],
-      [2, 1, "\u25CB \uAE30\uBCF8 \uC815\uBCF4(\uC870\uC0AC \uC77C\uC2DC :"],
-      [2, 5, "\uC870\uC0AC\uC77C\uC2DC"],
-      [2, 6, ")"],
+      [2, 1, "\u25CB \uAE30\uBCF8 \uC815\uBCF4(\uC870\uC0AC \uC77C\uC2DC :     \uB144    \uC6D4    \uC77C)"],
       [6, 1, "ID"],
       [6, 5, "\uACBD\uC791\uC790"],
       [6, 8, "\uC5F0\uB77D\uCC98"],
       [7, 1, "\uC790\uD0DD\uC8FC\uC18C"],
       [7, 8, "\uD488\uC885"],
-      [8, 1, "\uD544\uC9C0\uC8FC\uC18C\n(\uACE0\uB3C4 \uD3EC\uD568)"],
+      [8, 1, "\uD544\uC9C0\uC8FC\uC18C\n(\uACE0\uB3C4m)"],
       [8, 9, "\uACE0\uB3C4"],
-      [9, 1, "\uD574\uB2F9\uD544\uC9C0\uBA74\uC801"],
-      [9, 5, "\uD3C9"],
+      [9, 1, "\uD574\uB2F9\uD544\uC9C0\uBA74\uC801(\uD3C9)"],
+      [9, 5, ""],
       [9, 6, "\uD45C\uC804\uAC70\uB798 \uC5EC\uBD80"],
       [10, 1, "\uC7AC\uC2DD\uAC70\uB9AC\n(\uD55C\uADF8\uB8E8 \uB113\uC774)"],
       [10, 3, "\uC5F4\uAC04"],
       [10, 4, "\uC8FC\uAC04"],
       [10, 6, "\uACFC\uC218 \uC138\uBD80 \uD488\uC885"],
-      [11, 1, "\uC7AC\uC2DD \uC8FC\uC218"],
-      [11, 5, "\uC8FC/\uD574\uB2F9\uD544\uC9C0"],
+      [11, 1, "\uC7AC\uC2DD \uC8FC\uC218\n(\uC8FC/\uD574\uB2F9\uD544\uC9C0)"],
+      [11, 5, ""],
       [11, 6, "\uC7AC\uBC30 \uC218\uD615"],
       [12, 3, "\uC7AC\uC2DD \uC8FC\uC218_\uC804\uB144\uACFC \uB2E4\uB978 \uC774\uC720"],
       [14, 1, "\uAC1C\uD654\n\uC2DC\uC791\uC77C"],
       [14, 2, "\uC62C\uD574\n\uAC1C\uD654\uC77C"],
       [15, 2, "\uC804\uB144\n\uAC1C\uD654\uC77C"],
       [16, 2, "\uD3C9\uB144\n\uAC1C\uD654\uC77C"],
-      [18, 1, "\uB9CC\uAC1C\uAE30"],
-      [18, 2, "\uC62C\uD574\n\uB9CC\uAC1C\uC77C"],
-      [19, 2, "\uC804\uB144\n\uB9CC\uAC1C\uC77C"],
-      [20, 2, "\uD3C9\uB144\n\uB9CC\uAC1C\uC77C"],
+      [17, 1, "\uB9CC\uAC1C\uAE30"],
+      [17, 2, "\uC62C\uD574\n\uB9CC\uAC1C\uC77C"],
+      [18, 2, "\uC804\uB144\n\uB9CC\uAC1C\uC77C"],
+      [19, 2, "\uD3C9\uB144\n\uB9CC\uAC1C\uC77C"],
       [14, 8, "\uCC29\uD654\uB7C9"],
       [14, 7, "\uC804\uB144\n\uB300\uBE44"],
       [15, 7, "\uD3C9\uB144\n\uB300\uBE44"],
-      [17, 8, "\uCD5C\uC885\n\uCC29\uACFC\uC218"],
-      [17, 7, "\uC62C\uD574"],
-      [18, 7, "\uC804\uB144"],
-      [19, 7, "\uD3C9\uB144"],
-      [21, 8, "\uC800\uC628\n\uD53C\uD574"],
-      [21, 7, "2026\uB144"],
-      [22, 7, "2025\uB144"],
-      [21, 9, "\uD53C\uD574\uBE44\uC911"],
-      [21, 10, "\uCC29\uACFC\uBD88\uB2A5"],
-      [21, 11, "\uD488\uC704\uC800\uD558"],
+      [16, 8, "\uCD5C\uC885\n\uCC29\uACFC\uC218"],
+      [16, 7, "\uC62C\uD574\n\uBAA9\uD45C"],
+      [17, 7, "\uC804\uB144"],
+      [18, 7, "\uD3C9\uB144"],
+      [22, 8, "\uC800\uC628\n\uD53C\uD574"],
+      [22, 7, "2026\uB144"],
+      [23, 7, "2025\uB144"],
       [22, 9, "\uD53C\uD574\uBE44\uC911"],
       [22, 10, "\uCC29\uACFC\uBD88\uB2A5"],
       [22, 11, "\uD488\uC704\uC800\uD558"],
-      [22, 1, "\uB9CC\uAC1C\uB7C9\n(\uC804\uB144\uB300\uBE44)"],
-      [23, 1, "\uB9CC\uAC1C\uB7C9\n(\uD3C9\uB144\uB300\uBE44)"],
+      [23, 9, "\uD53C\uD574\uBE44\uC911"],
+      [23, 10, "\uCC29\uACFC\uBD88\uB2A5"],
+      [23, 11, "\uD488\uC704\uC800\uD558"],
+      [20, 1, "\uB9CC\uAC1C\uB7C9\n(\uC804\uB144\uB300\uBE44)"],
+      [21, 1, "\uB9CC\uAC1C\uB7C9\n(\uD3C9\uB144\uB300\uBE44)"],
       [25, 1, "\uC801\uACFC\uC77C\n(\uC608\uC815\uC77C)"],
       [25, 3, "\uC801\uACFC\uC77C 1\uCC28"],
       [26, 3, "\uC801\uACFC\uC77C 2\uCC28"],
@@ -431,35 +429,58 @@ function createTemplateFormatRequests(sheetId: number) {
 
 function createTemplateLayoutRepairRequests(sheetId: number) {
   const requests: unknown[] = [];
+  const labelMergeRanges: Array<[number, number, number, number]> = [
+    [14, 16, 1, 1],
+    [17, 19, 1, 1],
+    [16, 18, 8, 8],
+    [22, 23, 8, 8],
+    [20, 20, 1, 2],
+    [21, 21, 1, 2],
+  ];
   const mergedValueRanges: Array<[number, number, number, number]> = [
     [14, 14, 3, 6],
     [15, 15, 3, 6],
     [16, 16, 3, 6],
+    [17, 17, 3, 6],
     [18, 18, 3, 6],
     [19, 19, 3, 6],
-    [20, 20, 3, 6],
     [14, 14, 9, 11],
     [15, 15, 9, 11],
+    [16, 16, 9, 11],
     [17, 17, 9, 11],
     [18, 18, 9, 11],
-    [19, 19, 9, 11],
-    [22, 22, 3, 6],
-    [23, 23, 3, 6],
+    [20, 20, 3, 6],
+    [21, 21, 3, 6],
     [25, 25, 3, 6],
     [26, 26, 3, 6],
     [25, 25, 9, 11],
     [26, 26, 9, 11],
   ];
 
-  mergedValueRanges.forEach(([startRow, endRow, startCol, endCol]) => {
+  requests.push(unmergeCells(sheetId, 14, 23, 1, 11));
+  requests.push(unmergeCells(sheetId, 25, 26, 1, 11));
+  [
+    ...labelMergeRanges,
+    ...mergedValueRanges,
+    [18, 20, 1, 1],
+    [17, 19, 8, 8],
+    [21, 22, 8, 8],
+    [22, 22, 1, 2],
+    [23, 23, 1, 2],
+    [22, 22, 3, 4],
+    [23, 23, 3, 4],
+  ].forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(unmergeCells(sheetId, startRow, endRow, startCol, endCol));
+  });
+  labelMergeRanges.forEach(([startRow, endRow, startCol, endCol]) => {
+    requests.push(mergeCells(sheetId, startRow, endRow, startCol, endCol));
   });
   mergedValueRanges.forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(mergeCells(sheetId, startRow, endRow, startCol, endCol));
   });
 
-  requests.push(unmergeCells(sheetId, 21, 21, 9, 11));
   requests.push(unmergeCells(sheetId, 22, 22, 9, 11));
+  requests.push(unmergeCells(sheetId, 23, 23, 9, 11));
 
   [74, 96, 104, 60, 54, 102, 70, 92, 92, 92, 92].forEach(
     (width, index) => {
@@ -480,6 +501,7 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     [14, 42],
     [15, 42],
     [16, 42],
+    [17, 42],
     [18, 42],
     [19, 42],
     [20, 42],
@@ -562,7 +584,45 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
   ].forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(updateBorders(sheetId, startRow, endRow, startCol, endCol, "SOLID_THICK"));
   });
-  requests.push(updateBorders(sheetId, 21, 22, 9, 11, "SOLID"));
+  requests.push(updateBorders(sheetId, 22, 23, 9, 11, "SOLID"));
+
+  requests.push(
+    ...setCells(sheetId, [
+      [2, 1, "\u25CB \uAE30\uBCF8 \uC815\uBCF4(\uC870\uC0AC \uC77C\uC2DC :     \uB144    \uC6D4    \uC77C)"],
+      [8, 1, "\uD544\uC9C0\uC8FC\uC18C\n(\uACE0\uB3C4m)"],
+      [9, 1, "\uD574\uB2F9\uD544\uC9C0\uBA74\uC801(\uD3C9)"],
+      [9, 5, ""],
+      [11, 1, "\uC7AC\uC2DD \uC8FC\uC218\n(\uC8FC/\uD574\uB2F9\uD544\uC9C0)"],
+      [11, 5, ""],
+      [17, 1, "\uB9CC\uAC1C\uAE30"],
+      [17, 2, "\uC62C\uD574\n\uB9CC\uAC1C\uC77C"],
+      [18, 2, "\uC804\uB144\n\uB9CC\uAC1C\uC77C"],
+      [19, 2, "\uD3C9\uB144\n\uB9CC\uAC1C\uC77C"],
+      [16, 8, "\uCD5C\uC885\n\uCC29\uACFC\uC218"],
+      [16, 7, "\uC62C\uD574\n\uBAA9\uD45C"],
+      [17, 7, "\uC804\uB144"],
+      [18, 7, "\uD3C9\uB144"],
+      [19, 7, ""],
+      [20, 1, "\uB9CC\uAC1C\uB7C9\n(\uC804\uB144\uB300\uBE44)"],
+      [21, 1, "\uB9CC\uAC1C\uB7C9\n(\uD3C9\uB144\uB300\uBE44)"],
+      [22, 1, ""],
+      [23, 1, ""],
+      [22, 8, "\uC800\uC628\n\uD53C\uD574"],
+      [22, 7, "2026\uB144"],
+      [23, 7, "2025\uB144"],
+      [21, 7, ""],
+      [21, 8, ""],
+      [21, 9, ""],
+      [21, 10, ""],
+      [21, 11, ""],
+      [22, 9, "\uD53C\uD574\uBE44\uC911"],
+      [22, 10, "\uCC29\uACFC\uBD88\uB2A5"],
+      [22, 11, "\uD488\uC704\uC800\uD558"],
+      [23, 9, "\uD53C\uD574\uBE44\uC911"],
+      [23, 10, "\uCC29\uACFC\uBD88\uB2A5"],
+      [23, 11, "\uD488\uC704\uC800\uD558"],
+    ])
+  );
 
   return requests;
 }
@@ -717,6 +777,13 @@ function monthDay(value: string) {
   return `${parsed.month}-${parsed.day}`;
 }
 
+function surveyDateLine(value: string) {
+  const parsed = parseDate(value);
+  return `\u25CB \uAE30\uBCF8 \uC815\uBCF4(\uC870\uC0AC \uC77C\uC2DC : ${
+    parsed.year || "    "
+  } \uB144 ${parsed.month || "  "} \uC6D4 ${parsed.day || "  "} \uC77C)`;
+}
+
 function parseDate(value = "") {
   const text = String(value).trim();
   const digits = text.replace(/\D/g, "");
@@ -734,10 +801,17 @@ function parseDate(value = "") {
   };
 }
 
-function joinValues(values: Array<string | undefined>, separator: string) {
+function joinUniqueValues(values: Array<string | undefined>, separator: string) {
+  const seen = new Set<string>();
   return values
     .map((item) => String(item ?? "").trim())
     .filter(Boolean)
+    .filter((item) => {
+      const key = item.replace(/\s+/g, "");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .join(separator);
 }
 
