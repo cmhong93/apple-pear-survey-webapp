@@ -1,8 +1,8 @@
 import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { PDFDocument, rgb } from "pdf-lib";
-import fontkit from "@pdf-lib/fontkit";
+import { PDFDocument } from "pdf-lib";
+import sharp from "sharp";
 
 export type FarmBasicPdfValues = Record<string, string>;
 
@@ -32,121 +32,123 @@ type CircleOption = {
   height?: number;
 };
 
-const templatePath = path.join(
+const pageSize = {
+  width: 595.32,
+  height: 841.92,
+};
+const backgroundPixels = {
+  width: 1586,
+  height: 2246,
+};
+const scale = backgroundPixels.width / pageSize.width;
+
+const templateBackgroundPath = path.join(
   process.cwd(),
   "assets",
   "templates",
-  "farm_basic_2026_template.pdf"
+  "farm_basic_2026_template_bg.png"
 );
-const fontPath = path.join(
-  process.cwd(),
-  "assets",
-  "fonts",
-  "NotoSansKR-VF.ttf"
-);
-
-const black = rgb(0.05, 0.05, 0.05);
 
 const textMap: PdfTextItem[] = [
-  { fieldId: "farm_id", x: 72, y: 704, maxWidth: 94, align: "center" },
-  { fieldId: "farmer_name", x: 188, y: 704, maxWidth: 88, align: "center" },
-  { fieldId: "farmer_contact", x: 312, y: 704, maxWidth: 122, align: "center" },
-  { fieldId: "home_address", x: 92, y: 676, maxWidth: 430 },
-  { fieldId: "variety", x: 92, y: 648, maxWidth: 108, align: "center" },
-  { fieldId: "detailed_variety", x: 246, y: 648, maxWidth: 130, align: "center" },
-  { fieldId: "plot_address", x: 92, y: 620, maxWidth: 340 },
-  { fieldId: "altitude_m", x: 468, y: 620, maxWidth: 54, align: "center", suffix: " m" },
-  { fieldId: "plot_area_pyeong", x: 320, y: 584, maxWidth: 70, align: "center" },
-  { fieldId: "row_spacing_m", x: 145, y: 552, maxWidth: 50, align: "center" },
-  { fieldId: "tree_spacing_m", x: 260, y: 552, maxWidth: 50, align: "center" },
-  { fieldId: "planted_tree_count", x: 425, y: 552, maxWidth: 70, align: "center" },
+  { fieldId: "farm_id", x: 108, y: 684, maxWidth: 92, align: "center" },
+  { fieldId: "farmer_name", x: 264, y: 684, maxWidth: 90, align: "center" },
+  { fieldId: "farmer_contact", x: 430, y: 684, maxWidth: 120, align: "center" },
+  { fieldId: "home_address", x: 155, y: 655, maxWidth: 250 },
+  { fieldId: "variety", x: 472, y: 655, maxWidth: 55, align: "center" },
+  { fieldId: "detailed_variety", x: 410, y: 575, maxWidth: 155, align: "center" },
+  { fieldId: "plot_address", x: 155, y: 626, maxWidth: 300 },
+  { fieldId: "altitude_m", x: 478, y: 626, maxWidth: 45, align: "center", suffix: " m" },
+  { fieldId: "plot_area_pyeong", x: 214, y: 596, maxWidth: 70, align: "center" },
+  { fieldId: "row_spacing_m", x: 167, y: 565, maxWidth: 42, align: "center" },
+  { fieldId: "tree_spacing_m", x: 257, y: 565, maxWidth: 42, align: "center" },
+  { fieldId: "planted_tree_count", x: 190, y: 522, maxWidth: 70, align: "center" },
   { fieldId: "tree_count_changed_reason", x: 160, y: 522, maxWidth: 360 },
   { fieldId: "training_system_other", x: 472, y: 492, maxWidth: 54 },
-  { fieldId: "fruit_set_target_count_current", x: 160, y: 318, maxWidth: 75, align: "center" },
-  { fieldId: "fruit_set_count_previous_year", x: 287, y: 318, maxWidth: 75, align: "center" },
-  { fieldId: "fruit_set_count_normal_year", x: 415, y: 318, maxWidth: 75, align: "center" },
-  { fieldId: "cold_damage_2026_rate", x: 160, y: 276, maxWidth: 65, align: "center" },
-  { fieldId: "cold_damage_2026_no_fruit_set_rate", x: 287, y: 276, maxWidth: 65, align: "center" },
-  { fieldId: "cold_damage_2026_quality_decline_rate", x: 415, y: 276, maxWidth: 65, align: "center" },
-  { fieldId: "cold_damage_2025_rate", x: 160, y: 248, maxWidth: 65, align: "center" },
-  { fieldId: "cold_damage_2025_no_fruit_set_rate", x: 287, y: 248, maxWidth: 65, align: "center" },
-  { fieldId: "cold_damage_2025_quality_decline_rate", x: 415, y: 248, maxWidth: 65, align: "center" },
-  { fieldId: "farm_basic_notes", x: 88, y: 160, size: 8, maxWidth: 430 },
+  { fieldId: "fruit_set_target_count_current", x: 500, y: 406, maxWidth: 58, align: "center" },
+  { fieldId: "fruit_set_count_previous_year", x: 500, y: 379, maxWidth: 58, align: "center" },
+  { fieldId: "fruit_set_count_normal_year", x: 500, y: 351, maxWidth: 58, align: "center" },
+  { fieldId: "cold_damage_2026_rate", x: 510, y: 304, maxWidth: 48, align: "center" },
+  { fieldId: "cold_damage_2026_no_fruit_set_rate", x: 458, y: 279, maxWidth: 42, align: "center" },
+  { fieldId: "cold_damage_2026_quality_decline_rate", x: 530, y: 279, maxWidth: 42, align: "center" },
+  { fieldId: "cold_damage_2025_rate", x: 510, y: 248, maxWidth: 48, align: "center" },
+  { fieldId: "cold_damage_2025_no_fruit_set_rate", x: 458, y: 223, maxWidth: 42, align: "center" },
+  { fieldId: "cold_damage_2025_quality_decline_rate", x: 530, y: 223, maxWidth: 42, align: "center" },
+  { fieldId: "farm_basic_notes", x: 155, y: 97, size: 8, maxWidth: 370 },
 ];
 
 const dateMap: DateItem[] = [
   {
     fieldId: "survey_datetime",
-    y: 762,
+    y: 728,
     parts: ["year", "month", "day"],
-    x: { year: 160, month: 255, day: 326 },
+    x: { year: 214, month: 292, day: 342 },
   },
   {
     fieldId: "bloom_start_current_date",
     y: 452,
     parts: ["month", "day"],
-    x: { month: 162, day: 204 },
+    x: { month: 186, day: 250 },
   },
   {
     fieldId: "bloom_start_previous_date",
-    y: 452,
+    y: 429,
     parts: ["month", "day"],
-    x: { month: 286, day: 328 },
+    x: { month: 186, day: 250 },
   },
   {
     fieldId: "bloom_start_normal_date",
-    y: 452,
+    y: 405,
     parts: ["month", "day"],
-    x: { month: 410, day: 452 },
+    x: { month: 186, day: 250 },
   },
   {
     fieldId: "full_bloom_current_date",
-    y: 420,
+    y: 352,
     parts: ["month", "day"],
-    x: { month: 162, day: 204 },
+    x: { month: 186, day: 250 },
   },
   {
     fieldId: "full_bloom_previous_date",
-    y: 420,
+    y: 328,
     parts: ["month", "day"],
-    x: { month: 286, day: 328 },
+    x: { month: 186, day: 250 },
   },
   {
     fieldId: "full_bloom_normal_date",
-    y: 420,
+    y: 304,
     parts: ["month", "day"],
-    x: { month: 410, day: 452 },
+    x: { month: 186, day: 250 },
   },
   {
     fieldId: "fruit_thinning_1_date",
-    y: 210,
+    y: 184,
     parts: ["month", "day"],
-    x: { month: 163, day: 205 },
+    x: { month: 185, day: 250 },
   },
   {
     fieldId: "fruit_thinning_2_date",
-    y: 210,
+    y: 164,
     parts: ["month", "day"],
-    x: { month: 253, day: 295 },
+    x: { month: 185, day: 250 },
   },
   {
     fieldId: "expected_harvest_1_date",
-    y: 210,
+    y: 184,
     parts: ["month", "day"],
-    x: { month: 383, day: 425 },
+    x: { month: 456, day: 528 },
   },
   {
     fieldId: "expected_harvest_2_date",
-    y: 210,
+    y: 164,
     parts: ["month", "day"],
-    x: { month: 473, day: 515 },
+    x: { month: 456, day: 528 },
   },
 ];
 
 const circleMap: CircleOption[] = [
   ...options("standing_trade_yn", 584, [
-    ["O", 132],
-    ["X", 166],
+    ["O", 455],
+    ["X", 492],
   ]),
   ...options("training_system", 492, [
     ["주간형", 120],
@@ -164,62 +166,82 @@ const circleMap: CircleOption[] = [
 ];
 
 export async function createFarmBasicPdf(values: FarmBasicPdfValues) {
-  const [templateBytes, fontBytes] = await Promise.all([
-    fs.readFile(templatePath),
-    fs.readFile(fontPath),
-  ]);
-  const pdf = await PDFDocument.load(templateBytes);
-  pdf.registerFontkit(fontkit);
-  const font = await pdf.embedFont(fontBytes, { subset: true });
-  const page = pdf.getPage(0);
+  const backgroundBytes = await fs.readFile(templateBackgroundPath);
+  const composedPng = await sharp(backgroundBytes)
+    .composite([{ input: Buffer.from(createOverlaySvg(values)), left: 0, top: 0 }])
+    .png()
+    .toBuffer();
 
-  textMap.forEach((item) => {
-    const text = normalizePdfValue(values[item.fieldId]);
-    if (!text) return;
-    drawClippedText({
-      page,
-      font,
-      text: `${text}${item.suffix ?? ""}`,
-      x: item.x,
-      y: item.y,
-      size: item.size ?? 9,
-      maxWidth: item.maxWidth ?? 120,
-      align: item.align ?? "left",
-    });
-  });
-
-  dateMap.forEach((item) => {
-    const date = parsePdfDate(values[item.fieldId]);
-    if (!date) return;
-    item.parts.forEach((part) => {
-      const x = item.x[part];
-      if (x === undefined) return;
-      drawClippedText({
-        page,
-        font,
-        text: date[part],
-        x,
-        y: item.y,
-        size: 9,
-        maxWidth: part === "year" ? 42 : 24,
-        align: "center",
-      });
-    });
-  });
-
-  circleMap.forEach((item) => {
-    if (!matchesOption(values[item.fieldId], item.value)) return;
-    page.drawEllipse({
-      x: item.x,
-      y: item.y,
-      xScale: item.width ?? 14,
-      yScale: item.height ?? 8,
-      borderColor: black,
-      borderWidth: 1.1,
-    });
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([pageSize.width, pageSize.height]);
+  const pageImage = await pdf.embedPng(composedPng);
+  page.drawImage(pageImage, {
+    x: 0,
+    y: 0,
+    width: pageSize.width,
+    height: pageSize.height,
   });
 
   return pdf.save();
+}
+
+function createOverlaySvg(values: FarmBasicPdfValues) {
+  const elements = [
+    ...textMap.map((item) => renderText(item, values)),
+    ...dateMap.flatMap((item) => renderDate(item, values)),
+    ...circleMap.map((item) => renderCircle(item, values)),
+  ].filter(Boolean);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${backgroundPixels.width}" height="${backgroundPixels.height}" viewBox="0 0 ${backgroundPixels.width} ${backgroundPixels.height}">
+    <style>
+      text { font-family: "Noto Sans KR", "Malgun Gothic", Arial, sans-serif; fill: #111; font-weight: 500; }
+      ellipse { fill: none; stroke: #111; stroke-width: 3; }
+    </style>
+    ${elements.join("\n")}
+  </svg>`;
+}
+
+function renderText(item: PdfTextItem, values: FarmBasicPdfValues) {
+  const text = normalizePdfValue(values[item.fieldId]);
+  if (!text) return "";
+  const fontSize = Math.round((item.size ?? 9) * scale);
+  const maxWidth = Math.round((item.maxWidth ?? 120) * scale);
+  const x = Math.round(item.x * scale);
+  const y = toSvgY(item.y, fontSize);
+  const clipped = clipPlainText(`${text}${item.suffix ?? ""}`, maxWidth, fontSize);
+  const anchor = item.align === "center" ? "middle" : "start";
+  const textX = item.align === "center" ? x + maxWidth / 2 : x;
+
+  return `<text x="${textX}" y="${y}" font-size="${fontSize}" text-anchor="${anchor}">${escapeXml(clipped)}</text>`;
+}
+
+function renderDate(item: DateItem, values: FarmBasicPdfValues) {
+  const date = parsePdfDate(values[item.fieldId]);
+  if (!date) return [];
+
+  return item.parts
+    .map((part) => {
+      const x = item.x[part];
+      if (x === undefined) return "";
+      return renderText(
+        {
+          fieldId: part,
+          x,
+          y: item.y,
+          maxWidth: part === "year" ? 42 : 24,
+          align: "center",
+        },
+        date
+      );
+    })
+    .filter(Boolean);
+}
+
+function renderCircle(item: CircleOption, values: FarmBasicPdfValues) {
+  if (!matchesOption(values[item.fieldId], item.value)) return "";
+  return `<ellipse cx="${Math.round(item.x * scale)}" cy="${toSvgY(item.y, 0)}" rx="${Math.round(
+    (item.width ?? 14) * scale
+  )}" ry="${Math.round((item.height ?? 8) * scale)}" />`;
 }
 
 function options(
@@ -287,50 +309,20 @@ function normalizeChoice(value = "") {
     .toUpperCase();
 }
 
-function drawClippedText({
-  page,
-  font,
-  text,
-  x,
-  y,
-  size,
-  maxWidth,
-  align,
-}: {
-  page: ReturnType<PDFDocument["getPage"]>;
-  font: Awaited<ReturnType<PDFDocument["embedFont"]>>;
-  text: string;
-  x: number;
-  y: number;
-  size: number;
-  maxWidth: number;
-  align: "left" | "center";
-}) {
-  const clipped = clipText({ text, font, size, maxWidth });
-  const textWidth = font.widthOfTextAtSize(clipped, size);
-  page.drawText(clipped, {
-    x: align === "center" ? x + (maxWidth - textWidth) / 2 : x,
-    y,
-    size,
-    font,
-    color: black,
-  });
+function toSvgY(pdfY: number, fontSize: number) {
+  return Math.round((pageSize.height - pdfY) * scale + fontSize);
 }
 
-function clipText({
-  text,
-  font,
-  size,
-  maxWidth,
-}: {
-  text: string;
-  font: Awaited<ReturnType<PDFDocument["embedFont"]>>;
-  size: number;
-  maxWidth: number;
-}) {
-  let result = text;
-  while (result.length > 0 && font.widthOfTextAtSize(result, size) > maxWidth) {
-    result = result.slice(0, -1);
-  }
-  return result;
+function clipPlainText(text: string, maxWidth: number, fontSize: number) {
+  const approximateCharWidth = fontSize * 0.58;
+  const maxChars = Math.max(1, Math.floor(maxWidth / approximateCharWidth));
+  return text.length > maxChars ? text.slice(0, maxChars) : text;
+}
+
+function escapeXml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
