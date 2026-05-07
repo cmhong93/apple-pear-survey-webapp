@@ -183,7 +183,10 @@ async function createGeneratedFarmBasicPrintSheet({
 
   await batchUpdateSpreadsheet({
     spreadsheetId,
-    requests: createTemplateLayoutRepairRequests(properties.sheetId),
+    requests: [
+      ...createTemplateFormatRequests(properties.sheetId),
+      ...createTemplateLayoutRepairRequests(properties.sheetId),
+    ],
   });
 
   return { sheetId: properties.sheetId, title: properties.title };
