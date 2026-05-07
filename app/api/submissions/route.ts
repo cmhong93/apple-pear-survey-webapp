@@ -176,11 +176,15 @@ export async function POST(request: Request) {
     });
 
     if (duplicate) {
+      const duplicateSubmissionId = duplicate[0] ?? "";
       return Response.json({
         duplicate: true,
-        submission_id: duplicate[0],
+        submission_id: duplicateSubmissionId,
         submitted_at: duplicate[1],
-        answer_count: 0,
+        answer_count: await countStoredAnswers({
+          spreadsheetId: config.spreadsheetId,
+          submissionId: duplicateSubmissionId,
+        }),
       });
     }
 
@@ -437,7 +441,13 @@ function flattenAnswers({
   payload: SurveySubmissionPayload;
   updatedAt: string;
 }) {
-  const rows: unknown[][] = [];
+  const rows: unknown[][] = createCommonAnswerRows({
+    submissionId,
+    sampleId,
+    surveyType,
+    payload,
+    updatedAt,
+  });
   const fieldLookup = new Map(
     surveySchema.fields.map((field) => [`${field.tabId}:${field.id}`, field])
   );
@@ -483,6 +493,67 @@ function flattenAnswers({
   });
 
   return rows;
+}
+
+function createCommonAnswerRows({
+  submissionId,
+  sampleId,
+  surveyType,
+  payload,
+  updatedAt,
+}: {
+  submissionId: string;
+  sampleId: string;
+  surveyType: string;
+  payload: SurveySubmissionPayload;
+  updatedAt: string;
+}) {
+  const commonAnswers: Array<[fieldId: string, label: string, value: string]> = [
+    ["farm_id", "sample_id", payload.common.sample_id],
+    ["farmer_name", "farmer_name", payload.common.farmer_name],
+    ["farmer_contact", "phone", payload.common.phone],
+    ["home_address", "home_address", payload.common.home_address],
+    ["plot_address", "field_address", payload.common.field_address],
+    ["variety", "variety_group", payload.common.variety_group],
+    ["detailed_variety", "detail_variety", payload.common.detail_variety],
+    ["survey_month", "survey_month", payload.common.survey_month],
+    ["surveyor_name", "surveyor_id", payload.common.surveyor_id],
+    ["gps_latitude", "gps_latitude", payload.gpsState.latitude],
+    ["gps_longitude", "gps_longitude", payload.gpsState.longitude],
+    ["gps_altitude", "gps_altitude", payload.gpsState.altitude],
+    ["gps_accuracy", "gps_accuracy", payload.gpsState.accuracy],
+    ["gps_timestamp", "gps_timestamp", payload.gpsState.timestamp],
+  ];
+
+  return commonAnswers
+    .filter(([, , value]) => String(value ?? "").trim() !== "")
+    .map(([fieldId, label, value]) =>
+      createAnswerRow({
+        submissionId,
+        sampleId,
+        surveyType,
+        sectionId: "common",
+        fieldId,
+        field: { label, sourceFile: "submission_common" },
+        value,
+        updatedAt,
+      })
+    );
+}
+
+async function countStoredAnswers({
+  spreadsheetId,
+  submissionId,
+}: {
+  spreadsheetId: string;
+  submissionId: string;
+}) {
+  if (!submissionId) return 0;
+  const rows = await readSheetValues({
+    spreadsheetId,
+    range: "'survey_answers'!A:J",
+  });
+  return rows.slice(1).filter((row) => row[0] === submissionId).length;
 }
 
 function createAnswerRow({

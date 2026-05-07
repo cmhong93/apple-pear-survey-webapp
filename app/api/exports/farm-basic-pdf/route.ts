@@ -19,6 +19,7 @@ import {
   deleteGeneratedPrintSheet,
   getFarmBasicPrintTemplateConfig,
 } from "@/lib/farmBasicSheetPrintExport";
+import { surveySchema } from "@/data/surveySchema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -96,12 +97,19 @@ export async function POST(request: Request) {
       spreadsheetId: sheetsConfig.spreadsheetId,
       submissionId,
     });
+    const payloadAnswers =
+      Object.keys(answers).length === 0
+        ? extractAnswersFromPayloadJson(submission.payloadJson)
+        : {};
     const surveyMonth = submission.surveyMonth || "202606";
     const surveyLabel = "\uB18D\uAC00\uAE30\uBCF8\uC815\uBCF4";
     const filename = sanitizeFilename(
       `${surveyMonth}_${submission.sampleId}_${surveyLabel}_\uC870\uC0AC\uD45C.pdf`
     );
-    const values = createPdfValues({ submission, answers });
+    const values = createPdfValues({
+      submission,
+      answers: { ...payloadAnswers, ...answers },
+    });
     const printConfig = getFarmBasicPrintTemplateConfig(
       sheetsConfig.spreadsheetId
     );
@@ -212,6 +220,7 @@ async function findSubmission({
     sigungu: getCell(row, headers, "sigungu", 16),
     homeAddress: getCell(row, headers, "home_address", 17),
     fieldAddress: getCell(row, headers, "field_address", 18),
+    payloadJson: getCell(row, headers, "payload_json", 23),
   };
 }
 
@@ -314,6 +323,36 @@ function appendAnswerValue(current = "", next = "") {
   if (!value) return current;
   if (!current) return value;
   return `${current} | ${value}`;
+}
+
+function extractAnswersFromPayloadJson(payloadJson = "") {
+  if (!payloadJson) return {};
+
+  try {
+    const payload = JSON.parse(payloadJson) as {
+      formData?: Record<string, Record<string, string>>;
+      gpsState?: Record<string, string>;
+    };
+    const answers: Record<string, string> = {};
+    const fieldLookup = new Map(
+      surveySchema.fields.map((field) => [`${field.tabId}:${field.id}`, field])
+    );
+
+    Object.entries(payload.formData ?? {}).forEach(([tabId, values]) => {
+      Object.entries(values ?? {}).forEach(([fieldId, value]) => {
+        const field = fieldLookup.get(`${tabId}:${fieldId}`);
+        answers[field?.fieldId ?? fieldId] = value;
+      });
+    });
+
+    if (payload.gpsState?.altitude && !answers.altitude_m) {
+      answers.altitude_m = payload.gpsState.altitude;
+    }
+
+    return answers;
+  } catch {
+    return {};
+  }
 }
 
 function splitAnswerValues(value = "") {
