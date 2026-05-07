@@ -210,8 +210,13 @@ async function readAnswers({
   rows.slice(1).forEach((row) => {
     if (row[0] !== submissionId) return;
     const fieldId = row[4] ?? "";
+    const fieldLabel = row[5] ?? "";
     const value = row[6] ?? "";
-    if (fieldId) answers[fieldId] = value;
+    if (!fieldId) return;
+    answers[fieldId] = appendAnswerValue(answers[fieldId], value);
+
+    const dateSlot = getPdfDateSlot(fieldId, fieldLabel, answers[fieldId]);
+    if (dateSlot) answers[dateSlot] = value;
   });
   return answers;
 }
@@ -264,10 +269,55 @@ function createPdfValues({
     cold_damage_2025_no_fruit_set_rate: answers.cold_damage_2025_no_fruit_set_rate,
     cold_damage_2025_quality_decline_rate:
       answers.cold_damage_2025_quality_decline_rate,
-    fruit_thinning_completion_dates: answers.fruit_thinning_completion_dates,
-    expected_harvest_dates: answers.expected_harvest_dates,
+    fruit_thinning_1_date:
+      answers.fruit_thinning_1_date ||
+      splitAnswerValues(answers.fruit_thinning_completion_dates)[0] ||
+      "",
+    fruit_thinning_2_date:
+      answers.fruit_thinning_2_date ||
+      splitAnswerValues(answers.fruit_thinning_completion_dates)[1] ||
+      "",
+    expected_harvest_1_date:
+      answers.expected_harvest_1_date ||
+      splitAnswerValues(answers.expected_harvest_dates)[0] ||
+      "",
+    expected_harvest_2_date:
+      answers.expected_harvest_2_date ||
+      splitAnswerValues(answers.expected_harvest_dates)[1] ||
+      "",
     farm_basic_notes: answers.farm_basic_notes,
   };
+}
+
+function appendAnswerValue(current = "", next = "") {
+  const value = String(next ?? "").trim();
+  if (!value) return current;
+  if (!current) return value;
+  return `${current} | ${value}`;
+}
+
+function splitAnswerValues(value = "") {
+  return String(value)
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getPdfDateSlot(fieldId: string, label: string, currentValue: string) {
+  const order = splitAnswerValues(currentValue).length;
+  const text = `${fieldId} ${label}`;
+
+  if (fieldId === "fruit_thinning_completion_dates") {
+    if (text.includes("2")) return "fruit_thinning_2_date";
+    return order >= 2 ? "fruit_thinning_2_date" : "fruit_thinning_1_date";
+  }
+
+  if (fieldId === "expected_harvest_dates") {
+    if (text.includes("2")) return "expected_harvest_2_date";
+    return order >= 2 ? "expected_harvest_2_date" : "expected_harvest_1_date";
+  }
+
+  return "";
 }
 
 function getCell(
