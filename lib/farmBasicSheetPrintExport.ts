@@ -183,10 +183,7 @@ async function createGeneratedFarmBasicPrintSheet({
 
   await batchUpdateSpreadsheet({
     spreadsheetId,
-    requests: [
-      ...createTemplateFormatRequests(properties.sheetId),
-      ...createTemplateLayoutRepairRequests(properties.sheetId),
-    ],
+    requests: createTemplateLayoutRepairRequests(properties.sheetId),
   });
 
   return { sheetId: properties.sheetId, title: properties.title };
@@ -459,6 +456,28 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
   const labelMergeRanges: Array<[number, number, number, number]> = [
     [1, 1, 1, 11],
     [2, 2, 1, 11],
+    [6, 6, 1, 2],
+    [6, 6, 3, 4],
+    [6, 6, 6, 7],
+    [6, 6, 9, 11],
+    [7, 7, 1, 2],
+    [7, 7, 3, 7],
+    [7, 7, 9, 11],
+    [8, 8, 1, 2],
+    [8, 8, 3, 8],
+    [8, 8, 9, 11],
+    [9, 9, 1, 2],
+    [9, 9, 3, 5],
+    [9, 9, 6, 8],
+    [9, 9, 9, 11],
+    [10, 10, 1, 2],
+    [10, 10, 4, 5],
+    [10, 10, 6, 8],
+    [10, 10, 9, 11],
+    [11, 11, 1, 2],
+    [11, 11, 3, 5],
+    [11, 11, 6, 8],
+    [11, 11, 9, 11],
     [14, 16, 1, 1],
     [17, 19, 1, 1],
     [14, 15, 8, 8],
@@ -491,15 +510,13 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     [25, 25, 3, 11],
   ];
 
+  requests.push(unmergeCells(sheetId, 6, 12, 1, 11));
   requests.push(unmergeCells(sheetId, 1, 2, 1, 11));
   requests.push(unmergeCells(sheetId, 14, 23, 1, 11));
   requests.push(unmergeCells(sheetId, 22, 26, 1, 11));
   [
     ...labelMergeRanges,
     ...mergedValueRanges,
-    [9, 9, 3, 5],
-    [10, 10, 4, 5],
-    [11, 11, 3, 5],
     [18, 20, 1, 1],
     [17, 19, 8, 8],
     [21, 22, 8, 8],
@@ -516,10 +533,6 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
   mergedValueRanges.forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(mergeCells(sheetId, startRow, endRow, startCol, endCol));
   });
-  requests.push(mergeCells(sheetId, 9, 9, 3, 5));
-  requests.push(mergeCells(sheetId, 10, 10, 4, 5));
-  requests.push(mergeCells(sheetId, 11, 11, 3, 5));
-
   requests.push(unmergeCells(sheetId, 20, 20, 9, 11));
   requests.push(unmergeCells(sheetId, 21, 21, 9, 11));
 
@@ -587,7 +600,6 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
   [
     [6, 11, 3, 11],
     [14, 23, 3, 11],
-    [22, 23, 3, 11],
     [25, 25, 3, 11],
   ].forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(
@@ -608,8 +620,9 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     [10, 10, 6, 8],
     [11, 11, 1, 2],
     [11, 11, 6, 8],
-    [14, 23, 1, 2],
-    [14, 23, 7, 8],
+    [14, 21, 1, 2],
+    [14, 21, 7, 8],
+    [20, 21, 9, 11],
     [22, 23, 1, 2],
     [22, 23, 8, 8],
     [25, 25, 1, 2],
@@ -621,7 +634,7 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
 
   [
     [6, 11, 1, 11],
-    [14, 23, 1, 11],
+    [14, 21, 1, 11],
     [22, 23, 1, 11],
     [25, 25, 1, 11],
   ].forEach(([startRow, endRow, startCol, endCol]) => {
@@ -633,11 +646,23 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     ...setCells(sheetId, [
       [1, 1, "\uC0AC\uACFC\u00B7\uBC30 \uC2E4\uCE21 \uC870\uC0AC \uB18D\uAC00 \uAE30\uBCF8 \uC815\uBCF4 \uC870\uC0AC[\uC0DD\uC721 \uB18D\uAC00]"],
       [2, 1, "\u25CB \uAE30\uBCF8 \uC815\uBCF4(\uC870\uC0AC \uC77C\uC2DC :     \uB144    \uC6D4    \uC77C)"],
+      [6, 1, "ID"],
+      [6, 5, "\uACBD\uC791\uC790"],
+      [6, 8, "\uC5F0\uB77D\uCC98"],
+      [7, 1, "\uC790\uD0DD\uC8FC\uC18C"],
+      [7, 8, "\uD488\uC885"],
       [8, 1, "\uD544\uC9C0\uC8FC\uC18C\n(\uACE0\uB3C4m)"],
+      [8, 9, "\uACE0\uB3C4"],
       [9, 1, "\uD574\uB2F9\uD544\uC9C0\uBA74\uC801(\uD3C9)"],
       [9, 5, ""],
+      [9, 6, "\uD45C\uC804\uAC70\uB798 \uC5EC\uBD80"],
+      [10, 1, "\uC7AC\uC2DD\uAC70\uB9AC\n(\uD55C\uADF8\uB8E8 \uB113\uC774)"],
+      [10, 3, "\uC5F4\uAC04"],
+      [10, 4, "\uC8FC\uAC04"],
+      [10, 6, "\uACFC\uC218 \uC138\uBD80 \uD488\uC885"],
       [11, 1, "\uC7AC\uC2DD \uC8FC\uC218\n(\uC8FC/\uD574\uB2F9\uD544\uC9C0)"],
       [11, 5, ""],
+      [11, 6, "\uC7AC\uBC30 \uC218\uD615"],
       [12, 1, ""],
       [12, 3, ""],
       [12, 6, ""],
