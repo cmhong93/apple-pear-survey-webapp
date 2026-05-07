@@ -82,11 +82,10 @@ export async function createFarmBasicPdfFromSheetTemplate({
   templateSheetName: string;
   values: FarmBasicPrintValues;
 }) {
-  const template = await findSheetByTitle(spreadsheetId, templateSheetName);
+  await ensureFarmBasicTemplate({ spreadsheetId, title: templateSheetName });
   const generatedTitle = `print_${sanitizeSheetTitle(values.farm_id || "sample")}_${Date.now()}`;
-  const duplicated = await duplicateSheet({
+  const generated = await createGeneratedFarmBasicPrintSheet({
     spreadsheetId,
-    sourceSheetId: template.sheetId,
     title: generatedTitle,
   });
 
@@ -102,13 +101,13 @@ export async function createFarmBasicPdfFromSheetTemplate({
     return {
       pdfBytes: await exportSheetToPdf({
         spreadsheetId,
-        sheetId: duplicated.sheetId,
+        sheetId: generated.sheetId,
       }),
-      generatedSheetId: duplicated.sheetId,
+      generatedSheetId: generated.sheetId,
       generatedSheetName: generatedTitle,
     };
   } catch (error) {
-    await deleteSheetQuietly(spreadsheetId, duplicated.sheetId);
+    await deleteSheetQuietly(spreadsheetId, generated.sheetId);
     throw error;
   }
 }
@@ -135,6 +134,59 @@ async function findSheetByTitle(spreadsheetId: string, title: string) {
   }
   await repairFarmBasicTemplate({ spreadsheetId, sheetId });
   return { sheetId, title };
+}
+
+async function ensureFarmBasicTemplate({
+  spreadsheetId,
+  title,
+}: {
+  spreadsheetId: string;
+  title: string;
+}) {
+  try {
+    await findSheetByTitle(spreadsheetId, title);
+  } catch {
+    // PDF export uses a fresh generated sheet, so a template repair failure
+    // must not keep old Google Sheets layout artifacts in the exported PDF.
+  }
+}
+
+async function createGeneratedFarmBasicPrintSheet({
+  spreadsheetId,
+  title,
+}: {
+  spreadsheetId: string;
+  title: string;
+}) {
+  const response = await batchUpdateSpreadsheet({
+    spreadsheetId,
+    requests: [
+      {
+        addSheet: {
+          properties: {
+            title,
+            index: 1,
+            gridProperties: {
+              rowCount: 28,
+              columnCount: 11,
+              hideGridlines: true,
+            },
+          },
+        },
+      },
+    ],
+  });
+  const properties = response.replies?.[0]?.addSheet?.properties;
+  if (properties?.sheetId === undefined || !properties.title) {
+    throw new Error("Google Sheets generated print sheet creation failed.");
+  }
+
+  await batchUpdateSpreadsheet({
+    spreadsheetId,
+    requests: createTemplateLayoutRepairRequests(properties.sheetId),
+  });
+
+  return { sheetId: properties.sheetId, title: properties.title };
 }
 
 async function createDefaultFarmBasicTemplate({
@@ -189,33 +241,6 @@ async function repairFarmBasicTemplate({
     spreadsheetId,
     requests: createTemplateLayoutRepairRequests(sheetId),
   }).catch(() => undefined);
-}
-
-async function duplicateSheet({
-  spreadsheetId,
-  sourceSheetId,
-  title,
-}: {
-  spreadsheetId: string;
-  sourceSheetId: number;
-  title: string;
-}) {
-  const response = await batchUpdateSpreadsheet({
-    spreadsheetId,
-    requests: [
-      {
-        duplicateSheet: {
-          sourceSheetId,
-          newSheetName: title,
-        },
-      },
-    ],
-  });
-  const properties = response.replies?.[0]?.duplicateSheet?.properties;
-  if (properties?.sheetId === undefined || !properties.title) {
-    throw new Error("Google Sheets print sheet duplication failed.");
-  }
-  return { sheetId: properties.sheetId, title: properties.title };
 }
 
 function createValueUpdates({
@@ -429,6 +454,8 @@ function createTemplateFormatRequests(sheetId: number) {
 function createTemplateLayoutRepairRequests(sheetId: number) {
   const requests: unknown[] = [];
   const labelMergeRanges: Array<[number, number, number, number]> = [
+    [1, 1, 1, 11],
+    [2, 2, 1, 11],
     [14, 16, 1, 1],
     [17, 19, 1, 1],
     [14, 15, 8, 8],
@@ -461,6 +488,7 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     [25, 25, 3, 11],
   ];
 
+  requests.push(unmergeCells(sheetId, 1, 2, 1, 11));
   requests.push(unmergeCells(sheetId, 14, 23, 1, 11));
   requests.push(unmergeCells(sheetId, 22, 26, 1, 11));
   [
@@ -600,6 +628,7 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
 
   requests.push(
     ...setCells(sheetId, [
+      [1, 1, "\uC0AC\uACFC\u00B7\uBC30 \uC2E4\uCE21 \uC870\uC0AC \uB18D\uAC00 \uAE30\uBCF8 \uC815\uBCF4 \uC870\uC0AC[\uC0DD\uC721 \uB18D\uAC00]"],
       [2, 1, "\u25CB \uAE30\uBCF8 \uC815\uBCF4(\uC870\uC0AC \uC77C\uC2DC :     \uB144    \uC6D4    \uC77C)"],
       [8, 1, "\uD544\uC9C0\uC8FC\uC18C\n(\uACE0\uB3C4m)"],
       [9, 1, "\uD574\uB2F9\uD544\uC9C0\uBA74\uC801(\uD3C9)"],
@@ -624,7 +653,7 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
       [20, 1, "\uB9CC\uAC1C\uB7C9\n(\uC804\uB144\uB300\uBE44)"],
       [21, 1, "\uB9CC\uAC1C\uB7C9\n(\uD3C9\uB144\uB300\uBE44)"],
       [22, 1, "\uC801\uACFC\uC77C"],
-      [20, 8, "\uC800\uC628\n\uD53C\uD574"],
+      [20, 8, "\uC800\uC628\n\uD53C\uD574\n(%)"],
       [20, 7, "2026\uB144"],
       [21, 7, "2025\uB144"],
       [20, 9, "\uD53C\uD574\uBE44\uC911"],
