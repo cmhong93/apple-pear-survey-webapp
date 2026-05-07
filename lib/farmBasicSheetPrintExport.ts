@@ -167,7 +167,7 @@ async function createGeneratedFarmBasicPrintSheet({
             title,
             index: 1,
             gridProperties: {
-              rowCount: 28,
+              rowCount: 32,
               columnCount: 11,
               hideGridlines: true,
             },
