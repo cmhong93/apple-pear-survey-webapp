@@ -18,6 +18,7 @@ type CellMapping = {
 const defaultTemplateSheetName = "print_template_farm_basic";
 
 const valueMappings: CellMapping[] = [
+  { fieldId: "survey_datetime", cell: "E2" },
   { fieldId: "farm_id", cell: "C6" },
   { fieldId: "farmer_name", cell: "F6" },
   { fieldId: "farmer_contact", cell: "I6" },

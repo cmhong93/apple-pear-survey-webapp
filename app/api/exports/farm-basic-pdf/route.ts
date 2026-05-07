@@ -97,7 +97,7 @@ export async function POST(request: Request) {
       submissionId,
     });
     const surveyMonth = submission.surveyMonth || "202606";
-    const surveyLabel = submission.surveyLabel || "\uB18D\uAC00\uAE30\uBCF8";
+    const surveyLabel = "\uB18D\uAC00\uAE30\uBCF8\uC815\uBCF4";
     const filename = sanitizeFilename(
       `${surveyMonth}_${submission.sampleId}_${surveyLabel}_\uC870\uC0AC\uD45C.pdf`
     );
