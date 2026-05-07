@@ -727,9 +727,12 @@ function createXlsxFarmBasicTemplateRequests(sheetId: number) {
     [7, 7, 1, 2],
     [7, 7, 3, 5],
     [8, 8, 1, 2],
+    [8, 8, 4, 5],
     [9, 9, 1, 2],
-    [10, 10, 1, 2],
+    [10, 11, 1, 1],
+    [10, 11, 2, 2],
     [10, 10, 3, 4],
+    [10, 10, 6, 7],
     [11, 11, 4, 8],
     [12, 14, 1, 1],
     [12, 13, 4, 4],
@@ -839,7 +842,7 @@ function createXlsxFarmBasicTemplateRequests(sheetId: number) {
     [22, 22, 3, 8],
   ].forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(
-      repeatCell(sheetId, startRow, endRow, startCol, endCol, cellFormat("#fff2cc", false, 10))
+      repeatCell(sheetId, startRow, endRow, startCol, endCol, cellFormat("#ffffff", false, 10))
     );
   });
 
@@ -850,12 +853,12 @@ function createXlsxFarmBasicTemplateRequests(sheetId: number) {
     [6, 6, 6, 6],
     [7, 7, 6, 6],
     [8, 8, 6, 7],
-    [9, 10, 6, 7],
+    [10, 10, 6, 7],
     [12, 19, 1, 2],
     [12, 19, 4, 5],
     [17, 19, 6, 8],
     [20, 21, 1, 2],
-    [20, 21, 4, 5],
+    [20, 21, 4, 4],
     [22, 22, 1, 2],
   ].forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(
@@ -889,7 +892,7 @@ function createXlsxFarmBasicTemplateRequests(sheetId: number) {
       [7, 6, "고도"],
       [7, 8, "m"],
       [8, 1, "해당필지면적"],
-      [8, 5, "평"],
+      [8, 4, "평"],
       [8, 6, "포전거래 여부"],
       [9, 1, "재식거리"],
       [9, 4, "m(열간)"],
