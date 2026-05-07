@@ -86,25 +86,25 @@ const dateMap: DateItem[] = [
   },
   {
     fieldId: "bloom_start_current_date",
-    y: 452,
+    y: 456,
     parts: ["month", "day"],
     x: { month: 186, day: 250 },
   },
   {
     fieldId: "bloom_start_previous_date",
-    y: 429,
+    y: 428,
     parts: ["month", "day"],
     x: { month: 186, day: 250 },
   },
   {
     fieldId: "bloom_start_normal_date",
-    y: 405,
+    y: 400,
     parts: ["month", "day"],
     x: { month: 186, day: 250 },
   },
   {
     fieldId: "full_bloom_current_date",
-    y: 352,
+    y: 356,
     parts: ["month", "day"],
     x: { month: 186, day: 250 },
   },
@@ -116,7 +116,7 @@ const dateMap: DateItem[] = [
   },
   {
     fieldId: "full_bloom_normal_date",
-    y: 304,
+    y: 300,
     parts: ["month", "day"],
     x: { month: 186, day: 250 },
   },
