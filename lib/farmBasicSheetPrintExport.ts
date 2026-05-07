@@ -132,9 +132,66 @@ async function findSheetByTitle(spreadsheetId: string, title: string) {
   const sheet = metadata.sheets?.find((item) => item.properties?.title === title);
   const sheetId = sheet?.properties?.sheetId;
   if (sheetId === undefined) {
-    throw new Error("Google Sheets print template sheet is not configured.");
+    return createDefaultFarmBasicTemplate({ spreadsheetId, title });
   }
+  await repairFarmBasicTemplate({ spreadsheetId, sheetId });
   return { sheetId, title };
+}
+
+async function createDefaultFarmBasicTemplate({
+  spreadsheetId,
+  title,
+}: {
+  spreadsheetId: string;
+  title: string;
+}) {
+  const response = await batchUpdateSpreadsheet({
+    spreadsheetId,
+    requests: [
+      {
+        addSheet: {
+          properties: {
+            title,
+            index: 0,
+            gridProperties: {
+              rowCount: 32,
+              columnCount: 11,
+              hideGridlines: true,
+            },
+          },
+        },
+      },
+    ],
+  });
+  const properties = response.replies?.[0]?.addSheet?.properties;
+  if (properties?.sheetId === undefined) {
+    throw new Error("Google Sheets print template creation failed.");
+  }
+
+  await batchUpdateSpreadsheet({
+    spreadsheetId,
+    requests: createTemplateFormatRequests(properties.sheetId),
+  });
+
+  return { sheetId: properties.sheetId, title };
+}
+
+async function repairFarmBasicTemplate({
+  spreadsheetId,
+  sheetId,
+}: {
+  spreadsheetId: string;
+  sheetId: number;
+}) {
+  await batchUpdateSpreadsheet({
+    spreadsheetId,
+    requests: [
+      { unmergeCells: { range: gridRange(sheetId, 21, 21, 9, 11) } },
+      { unmergeCells: { range: gridRange(sheetId, 22, 22, 9, 11) } },
+      repeatCell(sheetId, 21, 22, 9, 11, cellFormat("#fff2cc")),
+      updateBorders(sheetId, 21, 22, 9, 11, "SOLID"),
+    ],
+  }).catch(() => undefined);
 }
 
 async function duplicateSheet({
@@ -189,6 +246,319 @@ async function deleteSheetQuietly(spreadsheetId: string, sheetId: number) {
   } catch {
     // Best-effort cleanup only. The export route returns the original failure.
   }
+}
+
+function createTemplateFormatRequests(sheetId: number) {
+  const requests: unknown[] = [
+    repeatCell(sheetId, 1, 32, 1, 11, cellFormat("#ffffff")),
+    repeatCell(sheetId, 1, 1, 1, 11, {
+      userEnteredFormat: {
+        horizontalAlignment: "CENTER",
+        verticalAlignment: "MIDDLE",
+        textFormat: {
+          bold: true,
+          fontSize: 16,
+          fontFamily: "Malgun Gothic",
+        },
+      },
+    }),
+    repeatCell(sheetId, 6, 28, 1, 11, {
+      userEnteredFormat: {
+        wrapStrategy: "WRAP",
+        verticalAlignment: "MIDDLE",
+        textFormat: {
+          fontSize: 10,
+          fontFamily: "Malgun Gothic",
+        },
+      },
+    }),
+  ];
+
+  [70, 88, 92, 52, 54, 90, 80, 96, 84, 84, 84].forEach((width, index) => {
+    requests.push(updateDimension(sheetId, "COLUMNS", index + 1, index + 1, width));
+  });
+  [
+    34, 26, 12, 6, 8, 30, 34, 38, 34, 34, 42, 34, 10, 34, 34, 34, 10, 34, 34,
+    34, 34, 34, 34, 10, 34, 34, 10, 58, 8, 8, 8, 8,
+  ].forEach((height, index) => {
+    requests.push(updateDimension(sheetId, "ROWS", index + 1, index + 1, height));
+  });
+
+  [
+    [1, 1, 1, 11],
+    [2, 2, 1, 11],
+    [6, 6, 1, 2],
+    [6, 6, 3, 4],
+    [6, 6, 6, 7],
+    [6, 6, 9, 11],
+    [7, 7, 1, 2],
+    [7, 7, 3, 7],
+    [7, 7, 9, 11],
+    [8, 8, 1, 2],
+    [8, 8, 3, 8],
+    [8, 8, 9, 11],
+    [9, 9, 1, 2],
+    [9, 9, 3, 4],
+    [9, 9, 6, 8],
+    [9, 9, 9, 11],
+    [10, 10, 1, 2],
+    [10, 10, 6, 8],
+    [10, 10, 9, 11],
+    [11, 12, 1, 2],
+    [11, 11, 3, 4],
+    [11, 11, 6, 8],
+    [11, 11, 9, 11],
+    [12, 12, 3, 11],
+    [14, 16, 1, 1],
+    [18, 20, 1, 1],
+    [14, 15, 8, 8],
+    [17, 19, 8, 8],
+    [21, 22, 8, 8],
+    [22, 22, 1, 2],
+    [22, 22, 3, 4],
+    [23, 23, 1, 2],
+    [23, 23, 3, 4],
+    [25, 26, 1, 2],
+    [25, 26, 8, 8],
+    [28, 28, 1, 2],
+    [28, 28, 3, 11],
+  ].forEach(([startRow, endRow, startCol, endCol]) => {
+    requests.push(mergeCells(sheetId, startRow, endRow, startCol, endCol));
+  });
+
+  [
+    [6, 6, 1, 2],
+    [6, 6, 5, 5],
+    [6, 6, 8, 8],
+    [7, 7, 1, 2],
+    [7, 7, 8, 8],
+    [8, 8, 1, 2],
+    [9, 9, 1, 2],
+    [9, 9, 6, 8],
+    [10, 10, 1, 2],
+    [10, 10, 6, 8],
+    [11, 12, 1, 2],
+    [11, 11, 6, 8],
+    [14, 23, 1, 2],
+    [14, 23, 7, 8],
+    [25, 26, 1, 2],
+    [25, 26, 8, 8],
+    [28, 28, 1, 2],
+  ].forEach(([startRow, endRow, startCol, endCol]) => {
+    requests.push(repeatCell(sheetId, startRow, endRow, startCol, endCol, cellFormat("#d9d9d9", true)));
+  });
+
+  [
+    [2, 2, 5, 5],
+    [6, 12, 3, 11],
+    [14, 23, 3, 11],
+    [25, 26, 3, 11],
+    [28, 28, 3, 11],
+  ].forEach(([startRow, endRow, startCol, endCol]) => {
+    requests.push(repeatCell(sheetId, startRow, endRow, startCol, endCol, cellFormat("#fff2cc")));
+  });
+
+  [
+    [6, 12, 1, 11],
+    [14, 23, 1, 11],
+    [25, 26, 1, 11],
+    [28, 28, 1, 11],
+  ].forEach(([startRow, endRow, startCol, endCol]) => {
+    requests.push(updateBorders(sheetId, startRow, endRow, startCol, endCol, "SOLID_THICK"));
+  });
+
+  requests.push(
+    ...setCells(sheetId, [
+      [1, 1, "\uC0AC\uACFC\u00B7\uBC30 \uC2E4\uCE21 \uC870\uC0AC \uB18D\uAC00 \uAE30\uBCF8 \uC815\uBCF4 \uC870\uC0AC[\uC0DD\uC721 \uB18D\uAC00]"],
+      [2, 1, "\u25CB \uAE30\uBCF8 \uC815\uBCF4(\uC870\uC0AC \uC77C\uC2DC :"],
+      [2, 5, "\uC870\uC0AC\uC77C\uC2DC"],
+      [2, 6, ")"],
+      [6, 1, "ID"],
+      [6, 5, "\uACBD\uC791\uC790"],
+      [6, 8, "\uC5F0\uB77D\uCC98"],
+      [7, 1, "\uC790\uD0DD\uC8FC\uC18C"],
+      [7, 8, "\uD488\uC885"],
+      [8, 1, "\uD544\uC9C0\uC8FC\uC18C\n(\uACE0\uB3C4 \uD3EC\uD568)"],
+      [8, 9, "\uACE0\uB3C4"],
+      [9, 1, "\uD574\uB2F9\uD544\uC9C0\uBA74\uC801"],
+      [9, 5, "\uD3C9"],
+      [9, 6, "\uD45C\uC804\uAC70\uB798 \uC5EC\uBD80"],
+      [10, 1, "\uC7AC\uC2DD\uAC70\uB9AC\n(\uD55C\uADF8\uB8E8 \uB113\uC774)"],
+      [10, 3, "\uC5F4\uAC04"],
+      [10, 4, "\uC8FC\uAC04"],
+      [10, 6, "\uACFC\uC218 \uC138\uBD80 \uD488\uC885"],
+      [11, 1, "\uC7AC\uC2DD \uC8FC\uC218"],
+      [11, 5, "\uC8FC/\uD574\uB2F9\uD544\uC9C0"],
+      [11, 6, "\uC7AC\uBC30 \uC218\uD615"],
+      [12, 3, "\uC7AC\uC2DD \uC8FC\uC218_\uC804\uB144\uACFC \uB2E4\uB978 \uC774\uC720"],
+      [14, 1, "\uAC1C\uD654\n\uC2DC\uC791\uC77C"],
+      [14, 2, "\uC62C\uD574\n\uAC1C\uD654\uC77C"],
+      [15, 2, "\uC804\uB144\n\uAC1C\uD654\uC77C"],
+      [16, 2, "\uD3C9\uB144\n\uAC1C\uD654\uC77C"],
+      [18, 1, "\uB9CC\uAC1C\uAE30"],
+      [18, 2, "\uC62C\uD574\n\uB9CC\uAC1C\uC77C"],
+      [19, 2, "\uC804\uB144\n\uB9CC\uAC1C\uC77C"],
+      [20, 2, "\uD3C9\uB144\n\uB9CC\uAC1C\uC77C"],
+      [14, 8, "\uCC29\uD654\uB7C9"],
+      [14, 7, "\uC804\uB144\n\uB300\uBE44"],
+      [15, 7, "\uD3C9\uB144\n\uB300\uBE44"],
+      [17, 8, "\uCD5C\uC885\n\uCC29\uACFC\uC218"],
+      [17, 7, "\uC62C\uD574"],
+      [18, 7, "\uC804\uB144"],
+      [19, 7, "\uD3C9\uB144"],
+      [21, 8, "\uC800\uC628\n\uD53C\uD574"],
+      [21, 7, "2026\uB144"],
+      [22, 7, "2025\uB144"],
+      [21, 9, "\uD53C\uD574\uBE44\uC911"],
+      [21, 10, "\uCC29\uACFC\uBD88\uB2A5"],
+      [21, 11, "\uD488\uC704\uC800\uD558"],
+      [22, 9, "\uD53C\uD574\uBE44\uC911"],
+      [22, 10, "\uCC29\uACFC\uBD88\uB2A5"],
+      [22, 11, "\uD488\uC704\uC800\uD558"],
+      [22, 1, "\uB9CC\uAC1C\uB7C9\n(\uC804\uB144\uB300\uBE44)"],
+      [23, 1, "\uB9CC\uAC1C\uB7C9\n(\uD3C9\uB144\uB300\uBE44)"],
+      [25, 1, "\uC801\uACFC\uC77C\n(\uC608\uC815\uC77C)"],
+      [25, 3, "\uC801\uACFC\uC77C 1\uCC28"],
+      [26, 3, "\uC801\uACFC\uC77C 2\uCC28"],
+      [25, 8, "\uC218\uD655\uC608\uC815\uC77C"],
+      [25, 9, "\uC218\uD655\uC608\uC815\uC77C 1\uCC28"],
+      [26, 9, "\uC218\uD655\uC608\uC815\uC77C 2\uCC28"],
+      [28, 1, "\uD2B9\uC774\uC0AC\uD56D\n(\uAE30\uD0C0)"],
+      [28, 3, "\uD2B9\uC774\uC0AC\uD56D"],
+    ])
+  );
+
+  return requests;
+}
+
+function gridRange(
+  sheetId: number,
+  startRow: number,
+  endRow: number,
+  startCol: number,
+  endCol: number
+) {
+  return {
+    sheetId,
+    startRowIndex: startRow - 1,
+    endRowIndex: endRow,
+    startColumnIndex: startCol - 1,
+    endColumnIndex: endCol,
+  };
+}
+
+function mergeCells(
+  sheetId: number,
+  startRow: number,
+  endRow: number,
+  startCol: number,
+  endCol: number
+) {
+  return {
+    mergeCells: {
+      range: gridRange(sheetId, startRow, endRow, startCol, endCol),
+      mergeType: "MERGE_ALL",
+    },
+  };
+}
+
+function repeatCell(
+  sheetId: number,
+  startRow: number,
+  endRow: number,
+  startCol: number,
+  endCol: number,
+  cell: unknown
+) {
+  return {
+    repeatCell: {
+      range: gridRange(sheetId, startRow, endRow, startCol, endCol),
+      cell,
+      fields: "userEnteredFormat",
+    },
+  };
+}
+
+function updateDimension(
+  sheetId: number,
+  dimension: "ROWS" | "COLUMNS",
+  start: number,
+  end: number,
+  pixelSize: number
+) {
+  return {
+    updateDimensionProperties: {
+      range: {
+        sheetId,
+        dimension,
+        startIndex: start - 1,
+        endIndex: end,
+      },
+      properties: { pixelSize },
+      fields: "pixelSize",
+    },
+  };
+}
+
+function updateBorders(
+  sheetId: number,
+  startRow: number,
+  endRow: number,
+  startCol: number,
+  endCol: number,
+  style: "SOLID" | "SOLID_THICK"
+) {
+  const border = {
+    style,
+    width: style === "SOLID_THICK" ? 2 : 1,
+    color: { red: 0.12, green: 0.12, blue: 0.12 },
+  };
+  return {
+    updateBorders: {
+      range: gridRange(sheetId, startRow, endRow, startCol, endCol),
+      top: border,
+      bottom: border,
+      left: border,
+      right: border,
+      innerHorizontal: { ...border, style: "SOLID", width: 1 },
+      innerVertical: { ...border, style: "SOLID", width: 1 },
+    },
+  };
+}
+
+function cellFormat(backgroundColor: string, bold = false) {
+  return {
+    userEnteredFormat: {
+      backgroundColor: hexColor(backgroundColor),
+      horizontalAlignment: "CENTER",
+      verticalAlignment: "MIDDLE",
+      wrapStrategy: "WRAP",
+      textFormat: {
+        bold,
+        fontSize: 10,
+        fontFamily: "Malgun Gothic",
+      },
+    },
+  };
+}
+
+function setCells(sheetId: number, values: Array<[number, number, string]>) {
+  return values.map(([row, col, value]) => ({
+    updateCells: {
+      range: gridRange(sheetId, row, row, col, col),
+      rows: [{ values: [{ userEnteredValue: { stringValue: value } }] }],
+      fields: "userEnteredValue",
+    },
+  }));
+}
+
+function hexColor(value: string) {
+  const number = Number.parseInt(value.slice(1), 16);
+  return {
+    red: ((number >> 16) & 255) / 255,
+    green: ((number >> 8) & 255) / 255,
+    blue: (number & 255) / 255,
+  };
 }
 
 function monthDay(value: string) {

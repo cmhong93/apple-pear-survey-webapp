@@ -212,6 +212,12 @@ export async function batchUpdateSpreadsheet({
 
   return (await response.json()) as {
     replies?: Array<{
+      addSheet?: {
+        properties?: {
+          sheetId?: number;
+          title?: string;
+        };
+      };
       duplicateSheet?: {
         properties?: {
           sheetId?: number;
