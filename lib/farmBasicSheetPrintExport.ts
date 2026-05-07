@@ -47,17 +47,17 @@ const valueMappings: CellMapping[] = [
   { fieldId: "fruit_set_target_count_current", cell: "I16" },
   { fieldId: "fruit_set_count_previous_year", cell: "I17" },
   { fieldId: "fruit_set_count_normal_year", cell: "I18" },
-  { fieldId: "cold_damage_2026_rate", cell: "I22" },
-  { fieldId: "cold_damage_2026_no_fruit_set_rate", cell: "J22" },
-  { fieldId: "cold_damage_2026_quality_decline_rate", cell: "K22" },
-  { fieldId: "cold_damage_2025_rate", cell: "I23" },
-  { fieldId: "cold_damage_2025_no_fruit_set_rate", cell: "J23" },
-  { fieldId: "cold_damage_2025_quality_decline_rate", cell: "K23" },
-  { fieldId: "fruit_thinning_1_date", cell: "C25", transform: monthDay },
-  { fieldId: "fruit_thinning_2_date", cell: "C26", transform: monthDay },
-  { fieldId: "expected_harvest_1_date", cell: "I25", transform: monthDay },
-  { fieldId: "expected_harvest_2_date", cell: "I26", transform: monthDay },
-  { fieldId: "farm_basic_notes", cell: "C28" },
+  { fieldId: "cold_damage_2026_rate", cell: "I20" },
+  { fieldId: "cold_damage_2026_no_fruit_set_rate", cell: "J20" },
+  { fieldId: "cold_damage_2026_quality_decline_rate", cell: "K20" },
+  { fieldId: "cold_damage_2025_rate", cell: "I21" },
+  { fieldId: "cold_damage_2025_no_fruit_set_rate", cell: "J21" },
+  { fieldId: "cold_damage_2025_quality_decline_rate", cell: "K21" },
+  { fieldId: "fruit_thinning_1_date", cell: "C23", transform: monthDay },
+  { fieldId: "fruit_thinning_2_date", cell: "C24", transform: monthDay },
+  { fieldId: "expected_harvest_1_date", cell: "I23", transform: monthDay },
+  { fieldId: "expected_harvest_2_date", cell: "I24", transform: monthDay },
+  { fieldId: "farm_basic_notes", cell: "C26" },
 ];
 
 export function getFarmBasicPrintTemplateConfig(defaultSpreadsheetId: string) {
@@ -433,9 +433,12 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     [14, 16, 1, 1],
     [17, 19, 1, 1],
     [16, 18, 8, 8],
-    [22, 23, 8, 8],
+    [20, 21, 8, 8],
     [20, 20, 1, 2],
     [21, 21, 1, 2],
+    [23, 24, 1, 2],
+    [23, 24, 8, 8],
+    [26, 26, 1, 2],
   ];
   const mergedValueRanges: Array<[number, number, number, number]> = [
     [14, 14, 3, 6],
@@ -451,17 +454,19 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     [18, 18, 9, 11],
     [20, 20, 3, 6],
     [21, 21, 3, 6],
-    [25, 25, 3, 6],
-    [26, 26, 3, 6],
-    [25, 25, 9, 11],
-    [26, 26, 9, 11],
+    [23, 23, 3, 6],
+    [24, 24, 3, 6],
+    [23, 23, 9, 11],
+    [24, 24, 9, 11],
+    [26, 26, 3, 11],
   ];
 
   requests.push(unmergeCells(sheetId, 14, 23, 1, 11));
-  requests.push(unmergeCells(sheetId, 25, 26, 1, 11));
+  requests.push(unmergeCells(sheetId, 23, 26, 1, 11));
   [
     ...labelMergeRanges,
     ...mergedValueRanges,
+    [11, 11, 3, 5],
     [18, 20, 1, 1],
     [17, 19, 8, 8],
     [21, 22, 8, 8],
@@ -478,9 +483,10 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
   mergedValueRanges.forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(mergeCells(sheetId, startRow, endRow, startCol, endCol));
   });
+  requests.push(mergeCells(sheetId, 11, 11, 3, 5));
 
-  requests.push(unmergeCells(sheetId, 22, 22, 9, 11));
-  requests.push(unmergeCells(sheetId, 23, 23, 9, 11));
+  requests.push(unmergeCells(sheetId, 20, 20, 9, 11));
+  requests.push(unmergeCells(sheetId, 21, 21, 9, 11));
 
   [74, 96, 104, 60, 54, 102, 70, 92, 92, 92, 92].forEach(
     (width, index) => {
@@ -497,7 +503,7 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     [9, 38],
     [10, 38],
     [11, 48],
-    [12, 42],
+    [12, 6],
     [14, 42],
     [15, 42],
     [16, 42],
@@ -506,11 +512,13 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     [19, 42],
     [20, 42],
     [21, 42],
-    [22, 42],
-    [23, 42],
-    [25, 40],
-    [26, 40],
-    [28, 64],
+    [22, 6],
+    [23, 40],
+    [24, 40],
+    [25, 6],
+    [26, 64],
+    [27, 6],
+    [28, 6],
   ].forEach(([row, height]) => {
     requests.push(updateDimension(sheetId, "ROWS", row, row, height));
   });
@@ -544,8 +552,8 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
   [
     [6, 12, 3, 11],
     [14, 23, 3, 11],
-    [25, 26, 3, 11],
-    [28, 28, 3, 11],
+    [23, 24, 3, 11],
+    [26, 26, 3, 11],
   ].forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(
       repeatCell(sheetId, startRow, endRow, startCol, endCol, cellFormat("#fff2cc", false, 11))
@@ -567,9 +575,9 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
     [11, 11, 6, 8],
     [14, 23, 1, 2],
     [14, 23, 7, 8],
-    [25, 26, 1, 2],
-    [25, 26, 8, 8],
-    [28, 28, 1, 2],
+    [23, 24, 1, 2],
+    [23, 24, 8, 8],
+    [26, 26, 1, 2],
   ].forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(
       repeatCell(sheetId, startRow, endRow, startCol, endCol, cellFormat("#d9d9d9", true, 11))
@@ -579,12 +587,12 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
   [
     [6, 12, 1, 11],
     [14, 23, 1, 11],
-    [25, 26, 1, 11],
-    [28, 28, 1, 11],
+    [23, 24, 1, 11],
+    [26, 26, 1, 11],
   ].forEach(([startRow, endRow, startCol, endCol]) => {
     requests.push(updateBorders(sheetId, startRow, endRow, startCol, endCol, "SOLID_THICK"));
   });
-  requests.push(updateBorders(sheetId, 22, 23, 9, 11, "SOLID"));
+  requests.push(updateBorders(sheetId, 20, 21, 9, 11, "SOLID"));
 
   requests.push(
     ...setCells(sheetId, [
@@ -606,21 +614,33 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
       [20, 1, "\uB9CC\uAC1C\uB7C9\n(\uC804\uB144\uB300\uBE44)"],
       [21, 1, "\uB9CC\uAC1C\uB7C9\n(\uD3C9\uB144\uB300\uBE44)"],
       [22, 1, ""],
-      [23, 1, ""],
-      [22, 8, "\uC800\uC628\n\uD53C\uD574"],
-      [22, 7, "2026\uB144"],
-      [23, 7, "2025\uB144"],
-      [21, 7, ""],
-      [21, 8, ""],
-      [21, 9, ""],
-      [21, 10, ""],
-      [21, 11, ""],
-      [22, 9, "\uD53C\uD574\uBE44\uC911"],
-      [22, 10, "\uCC29\uACFC\uBD88\uB2A5"],
-      [22, 11, "\uD488\uC704\uC800\uD558"],
-      [23, 9, "\uD53C\uD574\uBE44\uC911"],
-      [23, 10, "\uCC29\uACFC\uBD88\uB2A5"],
-      [23, 11, "\uD488\uC704\uC800\uD558"],
+      [20, 8, "\uC800\uC628\n\uD53C\uD574"],
+      [20, 7, "2026\uB144"],
+      [21, 7, "2025\uB144"],
+      [20, 9, "\uD53C\uD574\uBE44\uC911"],
+      [20, 10, "\uCC29\uACFC\uBD88\uB2A5"],
+      [20, 11, "\uD488\uC704\uC800\uD558"],
+      [21, 9, "\uD53C\uD574\uBE44\uC911"],
+      [21, 10, "\uCC29\uACFC\uBD88\uB2A5"],
+      [21, 11, "\uD488\uC704\uC800\uD558"],
+      [22, 7, ""],
+      [22, 8, ""],
+      [22, 9, ""],
+      [22, 10, ""],
+      [22, 11, ""],
+      [23, 1, "\uC801\uACFC\uC77C\n(\uC608\uC815\uC77C)"],
+      [23, 3, "\uC801\uACFC\uC77C 1\uCC28"],
+      [24, 3, "\uC801\uACFC\uC77C 2\uCC28"],
+      [23, 8, "\uC218\uD655\uC608\uC815\uC77C"],
+      [23, 9, "\uC218\uD655\uC608\uC815\uC77C 1\uCC28"],
+      [24, 9, "\uC218\uD655\uC608\uC815\uC77C 2\uCC28"],
+      [25, 1, ""],
+      [25, 8, ""],
+      [25, 9, ""],
+      [26, 1, "\uD2B9\uC774\uC0AC\uD56D\n(\uAE30\uD0C0)"],
+      [26, 3, "\uD2B9\uC774\uC0AC\uD56D"],
+      [28, 1, ""],
+      [28, 3, ""],
     ])
   );
 
