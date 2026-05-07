@@ -18,45 +18,48 @@ type CellMapping = {
 const defaultTemplateSheetName = "print_template_farm_basic";
 
 const valueMappings: CellMapping[] = [
-  { fieldId: "survey_datetime", cell: "A2", transform: surveyDateLine },
-  { fieldId: "farm_id", cell: "C6" },
-  { fieldId: "farmer_name", cell: "F6" },
-  { fieldId: "farmer_contact", cell: "I6" },
-  { fieldId: "home_address", cell: "C7" },
-  { fieldId: "variety", cell: "I7", transform: (_, values) => joinUniqueValues([values.variety, values.detailed_variety], " / ") },
-  { fieldId: "plot_address", cell: "C8" },
-  { fieldId: "altitude_m", cell: "I8" },
-  { fieldId: "plot_area_pyeong", cell: "C9" },
-  { fieldId: "standing_trade_yn", cell: "I9" },
-  { fieldId: "row_spacing_m", cell: "C10" },
-  { fieldId: "tree_spacing_m", cell: "D10" },
-  { fieldId: "detailed_variety", cell: "I10" },
-  { fieldId: "planted_tree_count", cell: "C11" },
-  { fieldId: "training_system", cell: "I11" },
-  { fieldId: "bloom_start_current_date", cell: "C14", transform: monthDay },
-  { fieldId: "bloom_start_previous_date", cell: "C15", transform: monthDay },
-  { fieldId: "bloom_start_normal_date", cell: "C16", transform: monthDay },
-  { fieldId: "full_bloom_current_date", cell: "C17", transform: monthDay },
-  { fieldId: "full_bloom_previous_date", cell: "C18", transform: monthDay },
-  { fieldId: "full_bloom_normal_date", cell: "C19", transform: monthDay },
-  { fieldId: "flowering_amount_vs_previous", cell: "I14" },
-  { fieldId: "flowering_amount_vs_normal", cell: "I15" },
-  { fieldId: "full_bloom_amount_vs_previous", cell: "C20" },
-  { fieldId: "full_bloom_amount_vs_normal", cell: "C21" },
-  { fieldId: "fruit_set_target_count_current", cell: "I16" },
-  { fieldId: "fruit_set_count_previous_year", cell: "I17" },
-  { fieldId: "fruit_set_count_normal_year", cell: "I18" },
-  { fieldId: "cold_damage_2026_rate", cell: "I20" },
-  { fieldId: "cold_damage_2026_no_fruit_set_rate", cell: "J20" },
-  { fieldId: "cold_damage_2026_quality_decline_rate", cell: "K20" },
-  { fieldId: "cold_damage_2025_rate", cell: "I21" },
-  { fieldId: "cold_damage_2025_no_fruit_set_rate", cell: "J21" },
-  { fieldId: "cold_damage_2025_quality_decline_rate", cell: "K21" },
-  { fieldId: "fruit_thinning_1_date", cell: "C22", transform: monthDay },
-  { fieldId: "fruit_thinning_2_date", cell: "C23", transform: monthDay },
-  { fieldId: "expected_harvest_1_date", cell: "I22", transform: monthDay },
-  { fieldId: "expected_harvest_2_date", cell: "I23", transform: monthDay },
-  { fieldId: "farm_basic_notes", cell: "C25" },
+  { fieldId: "survey_datetime", cell: "C3", transform: dateYear },
+  { fieldId: "survey_datetime", cell: "E3", transform: dateMonth },
+  { fieldId: "survey_datetime", cell: "G3", transform: dateDay },
+  { fieldId: "farm_id", cell: "C5" },
+  { fieldId: "farmer_name", cell: "E5" },
+  { fieldId: "farmer_contact", cell: "G5" },
+  { fieldId: "home_address", cell: "C6" },
+  { fieldId: "variety", cell: "G6", transform: (_, values) => joinUniqueValues([values.variety, values.detailed_variety], " / ") },
+  { fieldId: "plot_address", cell: "C7" },
+  { fieldId: "altitude_m", cell: "G7" },
+  { fieldId: "plot_area_pyeong", cell: "C8" },
+  { fieldId: "standing_trade_yn", cell: "H8" },
+  { fieldId: "row_spacing_m", cell: "C9" },
+  { fieldId: "tree_spacing_m", cell: "E9" },
+  { fieldId: "detailed_variety", cell: "H9" },
+  { fieldId: "planted_tree_count", cell: "C10" },
+  { fieldId: "training_system", cell: "H10" },
+  { fieldId: "tree_count_changed_reason", cell: "D11" },
+  { fieldId: "bloom_start_current_date", cell: "C12", transform: monthDay },
+  { fieldId: "bloom_start_previous_date", cell: "C13", transform: monthDay },
+  { fieldId: "bloom_start_normal_date", cell: "C14", transform: monthDay },
+  { fieldId: "full_bloom_current_date", cell: "C15", transform: monthDay },
+  { fieldId: "full_bloom_previous_date", cell: "C16", transform: monthDay },
+  { fieldId: "full_bloom_normal_date", cell: "C17", transform: monthDay },
+  { fieldId: "flowering_amount_vs_previous", cell: "F12" },
+  { fieldId: "flowering_amount_vs_normal", cell: "F13" },
+  { fieldId: "fruit_set_target_count_current", cell: "G14" },
+  { fieldId: "fruit_set_count_previous_year", cell: "G15" },
+  { fieldId: "fruit_set_count_normal_year", cell: "G16" },
+  { fieldId: "full_bloom_amount_vs_previous", cell: "C18" },
+  { fieldId: "full_bloom_amount_vs_normal", cell: "C19" },
+  { fieldId: "cold_damage_2026_rate", cell: "F18" },
+  { fieldId: "cold_damage_2026_no_fruit_set_rate", cell: "G18" },
+  { fieldId: "cold_damage_2026_quality_decline_rate", cell: "H18" },
+  { fieldId: "cold_damage_2025_rate", cell: "F19" },
+  { fieldId: "cold_damage_2025_no_fruit_set_rate", cell: "G19" },
+  { fieldId: "cold_damage_2025_quality_decline_rate", cell: "H19" },
+  { fieldId: "fruit_thinning_1_date", cell: "C20", transform: monthDay },
+  { fieldId: "fruit_thinning_2_date", cell: "C21", transform: monthDay },
+  { fieldId: "expected_harvest_1_date", cell: "F20", transform: monthDay },
+  { fieldId: "expected_harvest_2_date", cell: "F21", transform: monthDay },
+  { fieldId: "farm_basic_notes", cell: "C22" },
 ];
 
 export function getFarmBasicPrintTemplateConfig(defaultSpreadsheetId: string) {
@@ -167,8 +170,8 @@ async function createGeneratedFarmBasicPrintSheet({
             title,
             index: 1,
             gridProperties: {
-              rowCount: 32,
-              columnCount: 11,
+              rowCount: 24,
+              columnCount: 8,
               hideGridlines: true,
             },
           },
@@ -183,7 +186,7 @@ async function createGeneratedFarmBasicPrintSheet({
 
   await batchUpdateSpreadsheet({
     spreadsheetId,
-    requests: createTemplateLayoutRepairRequests(properties.sheetId),
+    requests: createXlsxFarmBasicTemplateRequests(properties.sheetId),
   });
 
   return { sheetId: properties.sheetId, title: properties.title };
@@ -711,6 +714,235 @@ function createTemplateLayoutRepairRequests(sheetId: number) {
   return requests;
 }
 
+function createXlsxFarmBasicTemplateRequests(sheetId: number) {
+  const requests: unknown[] = [];
+  const merges: Array<[number, number, number, number]> = [
+    [1, 1, 1, 8],
+    [5, 5, 1, 2],
+    [5, 5, 3, 3],
+    [5, 5, 7, 8],
+    [6, 6, 1, 2],
+    [6, 6, 3, 5],
+    [6, 6, 7, 8],
+    [7, 7, 1, 2],
+    [7, 7, 3, 5],
+    [8, 8, 1, 2],
+    [9, 9, 1, 2],
+    [10, 10, 1, 2],
+    [10, 10, 3, 4],
+    [11, 11, 4, 8],
+    [12, 14, 1, 1],
+    [12, 13, 4, 4],
+    [12, 12, 6, 8],
+    [13, 13, 6, 8],
+    [14, 16, 4, 4],
+    [15, 17, 1, 1],
+    [17, 19, 4, 4],
+    [18, 19, 1, 1],
+    [20, 21, 1, 1],
+    [20, 20, 6, 8],
+    [21, 21, 6, 8],
+    [22, 22, 1, 2],
+    [22, 22, 3, 8],
+  ];
+
+  requests.push(repeatCell(sheetId, 1, 24, 1, 8, cellFormat("#ffffff", false, 10)));
+  requests.push(unmergeCells(sheetId, 1, 24, 1, 8));
+  merges.forEach(([startRow, endRow, startCol, endCol]) => {
+    requests.push(mergeCells(sheetId, startRow, endRow, startCol, endCol));
+  });
+
+  [84, 72, 126, 72, 72, 92, 92, 92].forEach((width, index) => {
+    requests.push(updateDimension(sheetId, "COLUMNS", index + 1, index + 1, width));
+  });
+  [
+    [1, 34],
+    [2, 12],
+    [3, 24],
+    [4, 10],
+    [5, 30],
+    [6, 36],
+    [7, 36],
+    [8, 30],
+    [9, 30],
+    [10, 30],
+    [11, 30],
+    [12, 30],
+    [13, 30],
+    [14, 30],
+    [15, 30],
+    [16, 30],
+    [17, 30],
+    [18, 30],
+    [19, 30],
+    [20, 30],
+    [21, 30],
+    [22, 52],
+    [23, 8],
+    [24, 8],
+  ].forEach(([row, height]) => {
+    requests.push(updateDimension(sheetId, "ROWS", row, row, height));
+  });
+
+  requests.push(
+    repeatCell(sheetId, 1, 1, 1, 8, {
+      userEnteredFormat: {
+        horizontalAlignment: "CENTER",
+        verticalAlignment: "MIDDLE",
+        textFormat: {
+          bold: true,
+          fontSize: 16,
+          fontFamily: "Malgun Gothic",
+        },
+      },
+    })
+  );
+  requests.push(
+    repeatCell(sheetId, 3, 22, 1, 8, {
+      userEnteredFormat: {
+        horizontalAlignment: "CENTER",
+        verticalAlignment: "MIDDLE",
+        wrapStrategy: "WRAP",
+        textFormat: {
+          fontSize: 10,
+          fontFamily: "Malgun Gothic",
+        },
+      },
+    })
+  );
+
+  [
+    [3, 3, 3, 3],
+    [3, 3, 5, 5],
+    [3, 3, 7, 7],
+    [5, 5, 3, 3],
+    [5, 5, 5, 5],
+    [5, 5, 7, 8],
+    [6, 7, 3, 5],
+    [6, 6, 7, 8],
+    [7, 7, 7, 7],
+    [8, 8, 3, 3],
+    [8, 8, 8, 8],
+    [9, 9, 3, 3],
+    [9, 9, 5, 5],
+    [9, 9, 8, 8],
+    [10, 10, 3, 4],
+    [10, 10, 8, 8],
+    [11, 11, 4, 8],
+    [12, 14, 3, 3],
+    [12, 13, 6, 8],
+    [14, 16, 7, 7],
+    [18, 19, 3, 3],
+    [18, 19, 6, 8],
+    [20, 21, 3, 3],
+    [20, 21, 6, 8],
+    [22, 22, 3, 8],
+  ].forEach(([startRow, endRow, startCol, endCol]) => {
+    requests.push(
+      repeatCell(sheetId, startRow, endRow, startCol, endCol, cellFormat("#fff2cc", false, 10))
+    );
+  });
+
+  [
+    [5, 10, 1, 2],
+    [5, 5, 4, 4],
+    [5, 5, 6, 6],
+    [6, 6, 6, 6],
+    [7, 7, 6, 6],
+    [8, 8, 6, 7],
+    [9, 10, 6, 7],
+    [12, 19, 1, 2],
+    [12, 19, 4, 5],
+    [17, 19, 6, 8],
+    [20, 21, 1, 2],
+    [20, 21, 4, 5],
+    [22, 22, 1, 2],
+  ].forEach(([startRow, endRow, startCol, endCol]) => {
+    requests.push(
+      repeatCell(sheetId, startRow, endRow, startCol, endCol, cellFormat("#d9d9d9", true, 10))
+    );
+  });
+
+  [
+    [5, 11, 1, 8],
+    [12, 19, 1, 8],
+    [20, 21, 1, 8],
+    [22, 22, 1, 8],
+  ].forEach(([startRow, endRow, startCol, endCol]) => {
+    requests.push(updateBorders(sheetId, startRow, endRow, startCol, endCol, "SOLID_THICK"));
+  });
+  requests.push(updateBorders(sheetId, 17, 19, 6, 8, "SOLID"));
+
+  requests.push(
+    ...setCells(sheetId, [
+      [1, 1, "사과·배 실측 조사 농가 기본 정보 조사[생육 농가]"],
+      [3, 1, "○ 기본 정보(조사 일시 : "],
+      [3, 4, "년"],
+      [3, 6, "월"],
+      [3, 8, "일)"],
+      [5, 1, "ID"],
+      [5, 4, "경작자"],
+      [5, 6, "연락처"],
+      [6, 1, "자택주소"],
+      [6, 6, "품종"],
+      [7, 1, "필지주소"],
+      [7, 6, "고도"],
+      [7, 8, "m"],
+      [8, 1, "해당필지면적"],
+      [8, 5, "평"],
+      [8, 6, "포전거래 여부"],
+      [9, 1, "재식거리"],
+      [9, 4, "m(열간)"],
+      [9, 6, "m(주간)"],
+      [9, 7, "과수 세부품종"],
+      [10, 1, "재식주수"],
+      [10, 5, "주/해당필지"],
+      [10, 6, "재배 수형"],
+      [11, 3, "전년과 다른 이유:"],
+      [12, 1, "개화시작일"],
+      [12, 2, "올해"],
+      [13, 2, "전년"],
+      [14, 2, "평년"],
+      [15, 1, "만개기"],
+      [15, 2, "올해"],
+      [16, 2, "전년"],
+      [17, 2, "평년"],
+      [18, 1, "만개량"],
+      [18, 2, "전년대비"],
+      [19, 2, "평년대비"],
+      [12, 4, "착화량"],
+      [12, 5, "전년대비"],
+      [13, 5, "평년대비"],
+      [14, 4, "최종착과수"],
+      [14, 5, "올해목표"],
+      [14, 6, "1그루당"],
+      [14, 8, "개"],
+      [15, 5, "전년"],
+      [15, 6, "1그루당"],
+      [15, 8, "개"],
+      [16, 5, "평년"],
+      [16, 6, "1그루당"],
+      [16, 8, "개"],
+      [17, 4, "저온피해(%)"],
+      [17, 5, "년도"],
+      [17, 6, "피해비중(%)"],
+      [17, 7, "착과불능(%)"],
+      [17, 8, "품위저하(%)"],
+      [18, 5, "2026년"],
+      [19, 5, "2025년"],
+      [20, 1, "적과예정일"],
+      [20, 2, "1차"],
+      [21, 2, "2차"],
+      [20, 4, "수확예정일"],
+      [20, 5, "1차"],
+      [21, 5, "2차"],
+      [22, 1, "특이사항(기타)"],
+    ])
+  );
+
+  return requests;
+}
+
 function gridRange(
   sheetId: number,
   startRow: number,
@@ -861,11 +1093,16 @@ function monthDay(value: string) {
   return `${parsed.month}-${parsed.day}`;
 }
 
-function surveyDateLine(value: string) {
-  const parsed = parseDate(value);
-  return `\u25CB \uAE30\uBCF8 \uC815\uBCF4(\uC870\uC0AC \uC77C\uC2DC : ${
-    parsed.year || "    "
-  } \uB144 ${parsed.month || "  "} \uC6D4 ${parsed.day || "  "} \uC77C)`;
+function dateYear(value: string) {
+  return parseDate(value).year || "";
+}
+
+function dateMonth(value: string) {
+  return parseDate(value).month || "";
+}
+
+function dateDay(value: string) {
+  return parseDate(value).day || "";
 }
 
 function parseDate(value = "") {
