@@ -63,6 +63,7 @@ const textMap: PdfTextItem[] = [
   { fieldId: "tree_spacing_m", x: 257, y: 565, maxWidth: 42, align: "center" },
   { fieldId: "planted_tree_count", x: 190, y: 522, maxWidth: 70, align: "center" },
   { fieldId: "tree_count_changed_reason", x: 160, y: 522, maxWidth: 360 },
+  { fieldId: "training_system", x: 420, y: 522, maxWidth: 130, align: "center" },
   { fieldId: "training_system_other", x: 472, y: 492, maxWidth: 54 },
   { fieldId: "fruit_set_target_count_current", x: 500, y: 406, maxWidth: 58, align: "center" },
   { fieldId: "fruit_set_count_previous_year", x: 500, y: 379, maxWidth: 58, align: "center" },
@@ -149,15 +150,6 @@ const circleMap: CircleOption[] = [
   ...options("standing_trade_yn", 584, [
     ["O", 455],
     ["X", 492],
-  ]),
-  ...options("training_system", 492, [
-    ["주간형", 120],
-    ["세장방추형", 178],
-    ["다축형", 252],
-    ["Y자형", 306],
-    ["배상형", 360],
-    ["방사상형", 418],
-    ["기타", 468],
   ]),
   ...amountOptions("flowering_amount_vs_previous", 386, 128),
   ...amountOptions("flowering_amount_vs_normal", 386, 328),
@@ -254,11 +246,11 @@ function options(
 
 function amountOptions(fieldId: string, y: number, startX: number) {
   return options(fieldId, y, [
-    ["적음", startX],
-    ["다소 적음", startX + 39],
-    ["비슷", startX + 84],
-    ["다소 많음", startX + 128],
-    ["많음", startX + 173],
+    ["\uC801\uC74C", startX],
+    ["\uB2E4\uC18C \uC801\uC74C", startX + 39],
+    ["\uBE44\uC2B7", startX + 84],
+    ["\uB2E4\uC18C \uB9CE\uC74C", startX + 128],
+    ["\uB9CE\uC74C", startX + 173],
   ]);
 }
 
