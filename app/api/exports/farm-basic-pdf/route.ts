@@ -273,6 +273,10 @@ function createPdfValues({
     plot_area_pyeong: answers.plot_area_pyeong,
     row_spacing_m: answers.row_spacing_m,
     tree_spacing_m: answers.tree_spacing_m,
+    one_tree_area_m2: calculateOneTreeArea(
+      answers.row_spacing_m,
+      answers.tree_spacing_m
+    ),
     planted_tree_count: answers.planted_tree_count,
     tree_count_changed_reason: answers.tree_count_changed_reason,
     training_system: answers.training_system,
@@ -316,6 +320,16 @@ function createPdfValues({
       "",
     farm_basic_notes: answers.farm_basic_notes,
   };
+}
+
+function calculateOneTreeArea(rowSpacing: string, treeSpacing: string) {
+  const row = Number.parseFloat(String(rowSpacing ?? "").replace(/,/g, ""));
+  const tree = Number.parseFloat(String(treeSpacing ?? "").replace(/,/g, ""));
+  if (!Number.isFinite(row) || !Number.isFinite(tree)) return "";
+  const area = row * tree;
+  return Number.isInteger(area)
+    ? String(area)
+    : area.toFixed(2).replace(/\.?0+$/, "");
 }
 
 function appendAnswerValue(current = "", next = "") {

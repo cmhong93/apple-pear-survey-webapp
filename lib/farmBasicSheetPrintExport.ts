@@ -18,9 +18,7 @@ type CellMapping = {
 const defaultTemplateSheetName = "print_template_farm_basic";
 
 const valueMappings: CellMapping[] = [
-  { fieldId: "survey_datetime", cell: "C3", transform: dateYear },
-  { fieldId: "survey_datetime", cell: "E3", transform: dateMonth },
-  { fieldId: "survey_datetime", cell: "G3", transform: dateDay },
+  { fieldId: "survey_datetime", cell: "D3", transform: fullDate },
   { fieldId: "farm_id", cell: "C5" },
   { fieldId: "farmer_name", cell: "E5" },
   { fieldId: "farmer_contact", cell: "G5" },
@@ -29,13 +27,14 @@ const valueMappings: CellMapping[] = [
   { fieldId: "plot_address", cell: "C7" },
   { fieldId: "altitude_m", cell: "G7" },
   { fieldId: "plot_area_pyeong", cell: "C8" },
-  { fieldId: "standing_trade_yn", cell: "H8" },
+  { fieldId: "standing_trade_yn", cell: "G8" },
   { fieldId: "row_spacing_m", cell: "C9" },
   { fieldId: "tree_spacing_m", cell: "E9" },
-  { fieldId: "detailed_variety", cell: "H9" },
+  { fieldId: "one_tree_area_m2", cell: "G9" },
   { fieldId: "planted_tree_count", cell: "C10" },
-  { fieldId: "training_system", cell: "H10" },
-  { fieldId: "tree_count_changed_reason", cell: "D11" },
+  { fieldId: "detailed_variety", cell: "G10" },
+  { fieldId: "tree_count_changed_reason", cell: "C11" },
+  { fieldId: "training_system", cell: "G11" },
   { fieldId: "bloom_start_current_date", cell: "C12", transform: monthDay },
   { fieldId: "bloom_start_previous_date", cell: "C13", transform: monthDay },
   { fieldId: "bloom_start_normal_date", cell: "C14", transform: monthDay },
@@ -211,16 +210,10 @@ function monthDay(value: string) {
   return `${parsed.month}-${parsed.day}`;
 }
 
-function dateYear(value: string) {
-  return parseDate(value).year || "";
-}
-
-function dateMonth(value: string) {
-  return parseDate(value).month || "";
-}
-
-function dateDay(value: string) {
-  return parseDate(value).day || "";
+function fullDate(value: string) {
+  const parsed = parseDate(value);
+  if (!parsed.year || !parsed.month || !parsed.day) return value;
+  return `${parsed.year}-${parsed.month}-${parsed.day}`;
 }
 
 function parseDate(value = "") {
